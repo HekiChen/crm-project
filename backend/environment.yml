@@ -1,0 +1,27 @@
+name: crm-backend
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - fastapi
+  - uvicorn
+  - sqlalchemy
+  - alembic
+  - asyncpg  # PostgreSQL async driver
+  - redis-py
+  - celery
+  - pydantic
+  - pydantic-settings
+  - python-multipart  # For form data
+  - python-jose[cryptography]  # For JWT tokens
+  - passlib[bcrypt]  # For password hashing
+  - pytest
+  - pytest-asyncio
+  - httpx  # For testing FastAPI
+  - ruff
+  - curl  # For health checks
+  - pip
+  - pip:
+    - pytest-mock
+    - factory-boy  # For test data generation

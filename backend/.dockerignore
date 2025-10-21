@@ -1,0 +1,36 @@
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore environment files
+.env
+.env.*
+
+# Ignore database files
+*.db
+*.sqlite3
+
+# Ignore test artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+*.cover
+
+# Ignore development files
+.DS_Store
+.vscode/
+.idea/
+
+# Ignore log files
+*.log
+
+# Ignore temporary files
+*.tmp
+*.bak
+
+# Ignore build artifacts
+build/
+dist/
+*.egg-info/
