@@ -9,7 +9,7 @@ from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import JSON, Boolean, Date, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Date, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -82,7 +82,11 @@ class EmployeeMixin:
         index=True
     )
     hire_date: Mapped[date] = mapped_column(Date, nullable=False)
-    position_id: Mapped[Optional[UUID]] = mapped_column(nullable=True, index=True)
+    position_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("positions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
     department_id: Mapped[Optional[UUID]] = mapped_column(nullable=True, index=True)
     manager_id: Mapped[Optional[UUID]] = mapped_column(nullable=True, index=True)
 

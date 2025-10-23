@@ -23,31 +23,40 @@ def upgrade() -> None:
         # Primary key
         sa.Column('id', sa.UUID(), nullable=False),
         
-        # Custom fields        sa.Column(
-            'first_name',
-sa.String(255),            nullable=False,
-        ),        sa.Column(
-            'last_name',
-sa.String(255),            nullable=False,
-        ),        sa.Column(
-            'email',
-sa.String(255),            nullable=False,
-        ),        
+        # Custom fields
+        sa.Column('first_name', sa.String(255), nullable=False),
+        sa.Column('last_name', sa.String(255), nullable=False),
+        sa.Column('email', sa.String(255), nullable=False),
+        
         # Timestamp fields
         sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),        # Soft delete fields
+        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        
+        # Soft delete fields
         sa.Column('is_deleted', sa.Boolean(), nullable=False),
-        sa.Column('deleted_at', sa.DateTime(), nullable=True),        # Audit fields
+        sa.Column('deleted_at', sa.DateTime(), nullable=True),
+        
+        # Audit fields
         sa.Column('created_by_id', sa.UUID(), nullable=True),
-        sa.Column('updated_by_id', sa.UUID(), nullable=True),        
+        sa.Column('updated_by_id', sa.UUID(), nullable=True),
+        
         # Primary key constraint
-        sa.PrimaryKeyConstraint('id'),        # Unique constraints        sa.UniqueConstraint('email'),    )
+        sa.PrimaryKeyConstraint('id'),
+        
+        # Unique constraints
+        sa.UniqueConstraint('email'),
+    )
     
-    # Create indexes    op.create_index('ix_employees_id', 'employees', ['id'], unique=False)    op.create_index('ix_employees_is_deleted', 'employees', ['is_deleted'], unique=False)
+    # Create indexes
+    op.create_index('ix_employees_id', 'employees', ['id'], unique=False)
+    op.create_index('ix_employees_is_deleted', 'employees', ['is_deleted'], unique=False)
+
 
 def downgrade() -> None:
     """Downgrade database schema."""
-    # Drop indexes    op.drop_index('ix_employees_is_deleted', table_name='employees')    op.drop_index('ix_employees_id', table_name='employees')
+    # Drop indexes
+    op.drop_index('ix_employees_is_deleted', table_name='employees')
+    op.drop_index('ix_employees_id', table_name='employees')
     
     # Drop table
     op.drop_table('employees')

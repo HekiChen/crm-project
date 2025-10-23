@@ -11,6 +11,7 @@ from uuid import UUID
 from pydantic import Field, field_validator
 
 from app.schemas.base import CreateSchema, UpdateSchema, ResponseSchema, ListResponseSchema
+from app.schemas.position_schemas import PositionResponse
 
 
 class EmployeeCreate(CreateSchema):
@@ -23,6 +24,9 @@ class EmployeeCreate(CreateSchema):
     first_name: str = Field(description="The first_name field")
     last_name: str = Field(description="The last_name field")
     email: str = Field(description="The email field")
+    employee_number: str = Field(description="Unique employee identifier")
+    hire_date: date = Field(description="Date of hire")
+    position_id: Optional[UUID] = Field(default=None, description="UUID of the position/job role for this employee")
     
     
     # Add validators here
@@ -46,6 +50,9 @@ class EmployeeUpdate(UpdateSchema):
     first_name: Optional[str] = Field(default=None, description="The first_name field")
     last_name: Optional[str] = Field(default=None, description="The last_name field")
     email: Optional[str] = Field(default=None, description="The email field")
+    employee_number: Optional[str] = Field(default=None, description="Unique employee identifier")
+    hire_date: Optional[date] = Field(default=None, description="Date of hire")
+    position_id: Optional[UUID] = Field(default=None, description="UUID of the position/job role for this employee")
 
 
 class EmployeeResponse(ResponseSchema):
@@ -59,6 +66,10 @@ class EmployeeResponse(ResponseSchema):
     first_name: str = Field(description="The first_name field")
     last_name: str = Field(description="The last_name field")
     email: str = Field(description="The email field")
+    employee_number: str = Field(description="Unique employee identifier")
+    hire_date: date = Field(description="Date of hire")
+    position_id: Optional[UUID] = Field(default=None, description="UUID of the position/job role for this employee")
+    position: Optional[PositionResponse] = Field(default=None, description="The position/job role details for this employee")
 
 
 class EmployeeListResponse(ListResponseSchema[EmployeeResponse]):

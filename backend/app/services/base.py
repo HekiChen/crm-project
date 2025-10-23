@@ -35,16 +35,18 @@ class BaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType, Respons
             pass
     """
     
-    def __init__(self, model: Type[ModelType], db: AsyncSession):
+    def __init__(self, model: Type[ModelType], db: AsyncSession, response_schema: Optional[Type[ResponseSchemaType]] = None):
         """
         Initialize the service.
         
         Args:
             model: The SQLAlchemy model class
             db: The database session
+            response_schema: The response schema class (optional, for proper type conversion)
         """
         self.model = model
         self.db = db
+        self.response_schema = response_schema
     
     async def create(
         self,
@@ -165,7 +167,11 @@ class BaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType, Respons
         db_objects = list(result.scalars().all())
         
         # Convert SQLAlchemy models to Pydantic response schemas
-        response_data = [ResponseSchemaType.model_validate(obj) for obj in db_objects]
+        if self.response_schema:
+            response_data = [self.response_schema.model_validate(obj) for obj in db_objects]
+        else:
+            # Fallback: return raw objects if no response schema provided
+            response_data = db_objects
         
         # Return paginated response
         return ListResponseSchema[ResponseSchemaType].create(

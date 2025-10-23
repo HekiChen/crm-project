@@ -81,6 +81,54 @@ uvicorn app.main:app --reload
 - **Health Check**: <http://localhost:8000/api/v1/health>
 - **Database Health**: <http://localhost:8000/api/v1/health/db>
 
+## Features
+
+### Position/Job Role Management
+
+Comprehensive position management system for organizing job roles within your organization:
+
+**Key Features:**
+- ✅ CRUD operations for position/job roles
+- ✅ Unique position codes (e.g., 'SSE-001', 'PM-001')
+- ✅ Hierarchical levels (1-10) for organizational structure
+- ✅ Active/inactive status tracking
+- ✅ Employee-position relationships with FK constraints
+- ✅ Soft delete with automatic employee position cleanup
+- ✅ Pagination and filtering support
+
+**API Endpoints:**
+- `POST /api/v1/positions` - Create new position
+- `GET /api/v1/positions/{id}` - Get position by ID
+- `GET /api/v1/positions` - List positions (with pagination and filters)
+- `PUT /api/v1/positions/{id}` - Update position
+- `DELETE /api/v1/positions/{id}` - Soft delete position
+
+**Example Usage:**
+```bash
+# Create a new position
+curl -X POST http://localhost:8000/api/v1/positions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Senior Software Engineer",
+    "code": "SSE-001",
+    "level": 5,
+    "description": "Responsible for designing and implementing complex software systems",
+    "is_active": true
+  }'
+
+# List all active positions
+curl http://localhost:8000/api/v1/positions?is_active=true
+
+# Get employees by position
+curl http://localhost:8000/api/v1/employees?position_id={position_id}
+```
+
+**Database Schema:**
+- Positions table with unique code constraint
+- FK relationship: `employees.position_id → positions.id`
+- ON DELETE SET NULL: Employee positions auto-cleared when position deleted
+- Soft delete: Positions marked as deleted but retained for audit
+
 ### Development Commands
 
 ```bash

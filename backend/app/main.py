@@ -17,6 +17,7 @@ from app.middleware.logging import LoggingMiddleware
 from app.middleware.error_handler import register_exception_handlers
 from app.middleware.response_formatter import ResponseFormatterMiddleware
 from app.api.employees import router as employees_router
+from app.api.positions import router as positions_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -72,6 +73,7 @@ register_exception_handlers(app)
 # Include routers
 app.include_router(health_router, prefix=settings.api_v1_str, tags=["health"])
 app.include_router(employees_router, prefix="/api/v1/employees", tags=["employees"])
+app.include_router(positions_router, prefix="/api/v1/positions", tags=["positions"])
 
 # Root endpoint
 @app.get("/")

@@ -13,6 +13,12 @@ from app.schemas.base import (
     ErrorDetail,
     ErrorResponse,
 )
+from app.schemas.position_schemas import (
+    PositionCreate,
+    PositionUpdate,
+    PositionResponse,
+    PositionListResponse,
+)
 
 __all__ = [
     "BaseSchema",
@@ -25,4 +31,8 @@ __all__ = [
     "MessageResponse",
     "ErrorDetail",
     "ErrorResponse",
+    "PositionCreate",
+    "PositionUpdate",
+    "PositionResponse",
+    "PositionListResponse",
 ]

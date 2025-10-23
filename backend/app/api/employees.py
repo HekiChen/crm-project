@@ -22,7 +22,6 @@ from app.services.employee_service import EmployeeService
 
 
 router = APIRouter(
-    prefix="/employees",
     tags=["employees"],
 )
 
@@ -45,7 +44,92 @@ def get_employee_service(db: AsyncSession = Depends(get_db)) -> EmployeeService:
     response_model=EmployeeResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create employee",
-    description="Create a new employee entity.",
+    description="""
+Create a new employee entity with all required information.
+
+**Required Fields:**
+- `first_name`: Employee's first name (string, max 255 chars)
+- `last_name`: Employee's last name (string, max 255 chars)
+- `email`: Employee's email address (string, must be unique, max 255 chars)
+- `employee_number`: Unique employee identifier (string, max 50 chars)
+- `hire_date`: Date when employee was hired (date format: YYYY-MM-DD)
+
+**Optional Fields:**
+- `position_id`: UUID of the position/job role
+- `phone`: Contact phone number (string, max 20 chars)
+- `address1`: Primary address line (string, max 255 chars)
+- `address2`: Secondary address line (string, max 255 chars)
+- `city`: City (string, max 100 chars)
+- `state`: State/Province (string, max 100 chars)
+- `zip_code`: ZIP/Postal code (string, max 20 chars)
+- `country`: Country (string, max 100 chars, defaults to "US")
+- `department_id`: UUID of the department
+- `manager_id`: UUID of the manager (employee)
+
+**Returns:**
+- 201: Successfully created employee with all details
+- 409: Conflict - email or employee_number already exists
+- 422: Validation error - invalid data format
+    """,
+    responses={
+        201: {
+            "description": "Employee successfully created",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": {
+                            "id": "550e8400-e29b-41d4-a716-446655440000",
+                            "first_name": "John",
+                            "last_name": "Doe",
+                            "email": "john.doe@example.com",
+                            "employee_number": "EMP001",
+                            "hire_date": "2024-01-15",
+                            "position_id": "660e8400-e29b-41d4-a716-446655440001",
+                            "phone": "+1-555-0123",
+                            "city": "New York",
+                            "state": "NY",
+                            "country": "US",
+                            "position": {
+                                "id": "660e8400-e29b-41d4-a716-446655440001",
+                                "name": "Software Engineer",
+                                "code": "SE",
+                                "level": "Senior"
+                            },
+                            "created_at": "2024-01-15T10:30:00",
+                            "updated_at": "2024-01-15T10:30:00",
+                            "is_deleted": False
+                        }
+                    }
+                }
+            }
+        },
+        409: {
+            "description": "Conflict - Email or employee number already exists",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Employee with email 'john.doe@example.com' already exists"
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Validation Error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": [
+                            {
+                                "loc": ["body", "email"],
+                                "msg": "field required",
+                                "type": "value_error.missing"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
 )
 async def create_employee(
     employee_in: EmployeeCreate,
@@ -69,26 +153,88 @@ async def create_employee(
     "/{id}",
     response_model=EmployeeResponse,
     summary="Get employee by ID",
-    description="Retrieve a single employee by its ID.",
+    description="""
+Retrieve a single employee by its UUID with complete details including position information.
+
+Uses eager loading to include position details without N+1 queries for optimal performance.
+
+**Path Parameters:**
+- `id`: Employee UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+
+**Returns:**
+- 200: Employee found with all details and position information
+- 404: Employee not found
+    """,
+    responses={
+        200: {
+            "description": "Employee successfully retrieved",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": {
+                            "id": "550e8400-e29b-41d4-a716-446655440000",
+                            "first_name": "John",
+                            "last_name": "Doe",
+                            "email": "john.doe@example.com",
+                            "employee_number": "EMP001",
+                            "hire_date": "2024-01-15",
+                            "position_id": "660e8400-e29b-41d4-a716-446655440001",
+                            "department_id": None,
+                            "manager_id": None,
+                            "phone": "+1-555-0123",
+                            "address1": "123 Main St",
+                            "address2": "Apt 4B",
+                            "city": "New York",
+                            "state": "NY",
+                            "zip_code": "10001",
+                            "country": "US",
+                            "position": {
+                                "id": "660e8400-e29b-41d4-a716-446655440001",
+                                "name": "Software Engineer",
+                                "code": "SE",
+                                "level": "Senior",
+                                "description": "Senior software engineering role"
+                            },
+                            "created_at": "2024-01-15T10:30:00",
+                            "updated_at": "2024-01-15T10:30:00",
+                            "is_deleted": False
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Employee not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Employee not found"
+                    }
+                }
+            }
+        }
+    }
 )
 async def get_employee(
     id: UUID,
     service: EmployeeService = Depends(get_employee_service),
 ) -> Any:
     """
-    Get employee by ID.
+    Get employee by ID with position data.
+    
+    Uses eager loading to include position details without N+1 queries.
     
     Args:
         id: employee ID
         service: employee service
         
     Returns:
-        employee data
+        employee data with position details
         
     Raises:
         HTTPException: 404 if employee not found
     """
-    employee = await service.get_by_id(id)
+    employee = await service.get_by_id_with_position(id)
     
     if not employee:
         raise HTTPException(
@@ -103,31 +249,247 @@ async def get_employee(
     "/",
     response_model=EmployeeListResponse,
     summary="List employees",
-    description="Get a paginated list of employees.",
+    description="""
+Get a paginated list of employees with complete details and optional filtering.
+
+Uses eager loading to include position details for all employees without N+1 queries.
+
+**Query Parameters:**
+- `page`: Page number (default: 1, min: 1)
+- `page_size`: Items per page (default: 20, min: 1, max: 100)
+- `sort_by`: Field to sort by (default: "created_at")
+- `sort_order`: Sort direction - "asc" or "desc" (default: "desc")
+- `position_id`: Optional UUID to filter employees by position
+
+**Returns:**
+- 200: Paginated list of employees with metadata
+- 422: Validation error - invalid query parameters
+
+**Example Response:**
+```json
+{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john.doe@example.com",
+      "employee_number": "EMP001",
+      "hire_date": "2024-01-15",
+      "position": {
+        "name": "Software Engineer",
+        "code": "SE"
+      }
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total": 45,
+    "total_pages": 3
+  }
+}
+```
+    """,
+    responses={
+        200: {
+            "description": "List of employees successfully retrieved",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "id": "550e8400-e29b-41d4-a716-446655440000",
+                                "first_name": "John",
+                                "last_name": "Doe",
+                                "email": "john.doe@example.com",
+                                "employee_number": "EMP001",
+                                "hire_date": "2024-01-15",
+                                "position_id": "660e8400-e29b-41d4-a716-446655440001",
+                                "phone": "+1-555-0123",
+                                "city": "New York",
+                                "state": "NY",
+                                "country": "US",
+                                "position": {
+                                    "id": "660e8400-e29b-41d4-a716-446655440001",
+                                    "name": "Software Engineer",
+                                    "code": "SE",
+                                    "level": "Senior"
+                                },
+                                "created_at": "2024-01-15T10:30:00",
+                                "is_deleted": False
+                            },
+                            {
+                                "id": "550e8400-e29b-41d4-a716-446655440002",
+                                "first_name": "Jane",
+                                "last_name": "Smith",
+                                "email": "jane.smith@example.com",
+                                "employee_number": "EMP002",
+                                "hire_date": "2024-02-01",
+                                "position_id": "660e8400-e29b-41d4-a716-446655440003",
+                                "position": {
+                                    "id": "660e8400-e29b-41d4-a716-446655440003",
+                                    "name": "Product Manager",
+                                    "code": "PM",
+                                    "level": "Lead"
+                                },
+                                "created_at": "2024-02-01T09:00:00",
+                                "is_deleted": False
+                            }
+                        ],
+                        "meta": {
+                            "page": 1,
+                            "page_size": 20,
+                            "total": 45,
+                            "total_pages": 3
+                        }
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Validation Error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": [
+                            {
+                                "loc": ["query", "page"],
+                                "msg": "ensure this value is greater than 0",
+                                "type": "value_error.number.not_gt"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
 )
 async def list_employees(
     pagination: PaginationParams = Depends(),
+    position_id: UUID | None = None,
     service: EmployeeService = Depends(get_employee_service),
 ) -> Any:
     """
-    Get paginated list of employees.
+    Get paginated list of employees with position data.
+    
+    Uses eager loading to include position details without N+1 queries.
     
     Args:
         pagination: Pagination parameters
+        position_id: Optional filter by position ID
         service: employee service
         
     Returns:
-        Paginated list of employees
+        Paginated list of employees with position data
     """
-    # BaseService.get_list now returns ListResponseSchema directly
-    return await service.get_list(pagination=pagination)
+    return await service.get_list_with_positions(
+        pagination=pagination,
+        position_id=position_id
+    )
 
 
 @router.put(
     "/{id}",
     response_model=EmployeeResponse,
     summary="Update employee",
-    description="Update all fields of a employee.",
+    description="""
+Update employee information. All fields are optional - only provide the fields you want to update.
+
+**Path Parameters:**
+- `id`: Employee UUID to update
+
+**Updatable Fields:**
+- `first_name`: Employee's first name (string, max 255 chars)
+- `last_name`: Employee's last name (string, max 255 chars)
+- `email`: Employee's email address (string, must be unique, max 255 chars)
+- `employee_number`: Unique employee identifier (string, max 50 chars)
+- `hire_date`: Date when employee was hired (date format: YYYY-MM-DD)
+- `position_id`: UUID of the position/job role
+- `phone`: Contact phone number (string, max 20 chars)
+- `address1`: Primary address line (string, max 255 chars)
+- `address2`: Secondary address line (string, max 255 chars)
+- `city`: City (string, max 100 chars)
+- `state`: State/Province (string, max 100 chars)
+- `zip_code`: ZIP/Postal code (string, max 20 chars)
+- `country`: Country (string, max 100 chars)
+- `department_id`: UUID of the department
+- `manager_id`: UUID of the manager (employee)
+
+**Returns:**
+- 200: Successfully updated employee
+- 404: Employee not found
+- 409: Conflict - email or employee_number already exists for another employee
+- 422: Validation error - invalid data format
+    """,
+    responses={
+        200: {
+            "description": "Employee successfully updated",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": {
+                            "id": "550e8400-e29b-41d4-a716-446655440000",
+                            "first_name": "John",
+                            "last_name": "Doe",
+                            "email": "john.doe@example.com",
+                            "employee_number": "EMP001",
+                            "hire_date": "2024-01-15",
+                            "position_id": "660e8400-e29b-41d4-a716-446655440002",
+                            "phone": "+1-555-0456",
+                            "city": "Boston",
+                            "state": "MA",
+                            "position": {
+                                "id": "660e8400-e29b-41d4-a716-446655440002",
+                                "name": "Senior Software Engineer",
+                                "code": "SSE",
+                                "level": "Senior"
+                            },
+                            "created_at": "2024-01-15T10:30:00",
+                            "updated_at": "2024-06-20T14:25:00",
+                            "is_deleted": False
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Employee not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Employee not found"
+                    }
+                }
+            }
+        },
+        409: {
+            "description": "Conflict - Email or employee number already exists",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Employee with email 'john.doe@example.com' already exists"
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Validation Error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": [
+                            {
+                                "loc": ["body", "email"],
+                                "msg": "invalid email format",
+                                "type": "value_error.email"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
 )
 async def update_employee(
     id: UUID,
@@ -163,7 +525,43 @@ async def update_employee(
     "/{id}",
     response_model=MessageResponse,
     summary="Delete employee",
-    description="Soft delete a employee.",
+    description="""
+Soft delete an employee. The employee record is marked as deleted but not removed from the database.
+
+This is a non-destructive operation - the employee data is preserved and can be restored if needed.
+
+**Path Parameters:**
+- `id`: Employee UUID to delete
+
+**Returns:**
+- 200: Employee successfully deleted (soft delete)
+- 404: Employee not found
+
+**Note:** This performs a soft delete by setting `is_deleted=True` and `deleted_at=<current_timestamp>`.
+The employee will no longer appear in list/get operations unless specifically queried with `include_deleted=True`.
+    """,
+    responses={
+        200: {
+            "description": "Employee successfully deleted",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Employee deleted successfully"
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Employee not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Employee not found"
+                    }
+                }
+            }
+        }
+    }
 )
 async def delete_employee(
     id: UUID,

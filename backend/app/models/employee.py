@@ -34,7 +34,17 @@ Represents employee entities in the system.    """
     # email
     email: Mapped[str] = mapped_column(
         String(255), unique=True, nullable=False,
-        doc="The email field"    )
+        doc="The email field"
+    )
+    
+    # Relationships
+    position: Mapped[Optional["Position"]] = relationship(
+        "Position",
+        back_populates="employees",
+        foreign_keys="[Employee.position_id]",
+        lazy="select",
+        doc="The position/job role assigned to this employee"
+    )
     
     def __repr__(self) -> str:
         """String representation."""

@@ -13,6 +13,10 @@ from alembic import context
 from app.core.database import Base
 from app.core.config import settings
 
+# Import all models so Alembic can detect them
+from app.models.employee import Employee
+from app.models.position import Position
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
