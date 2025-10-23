@@ -3,13 +3,17 @@ Position model for CRM system.
 
 Represents job roles/positions within the organization.
 """
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import Boolean, Integer, String, Text
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from app.models.employee import Employee
+    from app.models.department import Department
 
 
 class Position(BaseModel):
@@ -51,6 +55,7 @@ class Position(BaseModel):
     
     # Department reference (nullable until Department entity implemented)
     department_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("departments.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
         doc="Reference to department (when Department entity exists)"
@@ -72,6 +77,14 @@ class Position(BaseModel):
         foreign_keys="[Employee.position_id]",
         lazy="select",
         doc="Employees assigned to this position"
+    )
+    
+    department: Mapped[Optional["Department"]] = relationship(
+        "Department",
+        back_populates="positions",
+        foreign_keys=[department_id],
+        lazy="select",
+        doc="Department this position belongs to"
     )
     
     def __repr__(self) -> str:

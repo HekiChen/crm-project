@@ -2,11 +2,27 @@
 SQLAlchemy database models.
 """
 from app.core.database import Base
+from app.models.department import Department
 from app.models.position import Position
+from app.models.role import Role
 from app.models.employee import Employee
+from app.models.menu import Menu
+from app.models.employee_role import EmployeeRole
+from app.models.role_menu_perm import RoleMenuPerm
+from app.models.work_log import WorkLog
+from app.models.export_job import ExportJob
 
 # Import all models here to ensure they are registered with SQLAlchemy
-# from app.models.user import User
-# from app.models.work_log import WorkLog
 
-__all__ = ["Base", "Position", "Employee"]
+__all__ = [
+    "Base",
+    "Department",
+    "Position",
+    "Role",
+    "Employee",
+    "Menu",
+    "EmployeeRole",
+    "RoleMenuPerm",
+    "WorkLog",
+    "ExportJob",
+]

@@ -87,8 +87,16 @@ class EmployeeMixin:
         nullable=True,
         index=True
     )
-    department_id: Mapped[Optional[UUID]] = mapped_column(nullable=True, index=True)
-    manager_id: Mapped[Optional[UUID]] = mapped_column(nullable=True, index=True)
+    department_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("departments.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+    manager_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("employees.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
 
 
 class CustomerMixin:
