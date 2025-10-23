@@ -14,8 +14,15 @@ from app.core.database import Base
 from app.core.config import settings
 
 # Import all models so Alembic can detect them
-from app.models.employee import Employee
+from app.models.department import Department
 from app.models.position import Position
+from app.models.role import Role
+from app.models.employee import Employee
+from app.models.menu import Menu
+from app.models.employee_role import EmployeeRole
+from app.models.role_menu_perm import RoleMenuPerm
+from app.models.work_log import WorkLog
+from app.models.export_job import ExportJob
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
