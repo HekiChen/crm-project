@@ -26,9 +26,15 @@ class Settings(BaseSettings):
     api_v1_str: str = "/api/v1"
     
     # Security
-    secret_key: str = Field(description="Secret key for JWT token signing")
+    secret_key: str = Field(default="dev-secret-key-change-in-production", description="Secret key for JWT token signing")
+    SECRET_KEY: str = Field(default="dev-secret-key-change-in-production", description="Secret key (uppercase)")
     access_token_expire_minutes: int = Field(default=30, description="Access token expiration in minutes")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, description="Access token expiration (uppercase)")
+    refresh_token_expire_days: int = Field(default=7, description="Refresh token expiration in days")
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, description="Refresh token expiration (uppercase)")
     algorithm: str = Field(default="HS256", description="JWT algorithm")
+    ALGORITHM: str = Field(default="HS256", description="JWT algorithm (uppercase)")
+    rate_limit_per_minute: int = Field(default=60, description="API rate limit requests per minute per IP")
     
     # Database
     database_url: str = Field(description="PostgreSQL database URL")

@@ -4,11 +4,19 @@ FastAPI main application.
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import init_db, close_db
 from app.api.health import router as health_router
+from app.middleware.security import (
+    SecurityHeadersMiddleware,
+    RateLimitMiddleware,
+    configure_cors,
+)
+from app.middleware.logging import LoggingMiddleware
+from app.middleware.error_handler import register_exception_handlers
+from app.middleware.response_formatter import ResponseFormatterMiddleware
+from app.api.employees import router as employees_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,17 +45,33 @@ app = FastAPI(
     redoc_url="/redoc" if settings.debug else None,
 )
 
-# CORS middleware
+# Middleware registration (order matters - outer to inner)
+# 1. Security headers (outermost - applied to all responses including errors)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 2. CORS (allow cross-origin requests)
+configure_cors(app)
+
+# 3. Rate limiting (protect against abuse)
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.backend_cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    RateLimitMiddleware,
+    requests_per_minute=settings.rate_limit_per_minute
 )
+
+# 4. Logging (track requests)
+app.add_middleware(LoggingMiddleware)
+
+# 5. Response formatting (wrap successful responses)
+# Now using pure ASGI implementation to avoid BaseHTTPMiddleware Content-Length issues
+app.add_middleware(ResponseFormatterMiddleware)
+
+# 6. Exception handlers (catch and format errors)
+# Note: Auth is handled via dependency injection, not middleware
+register_exception_handlers(app)
 
 # Include routers
 app.include_router(health_router, prefix=settings.api_v1_str, tags=["health"])
+app.include_router(employees_router, prefix="/api/v1/employees", tags=["employees"])
 
 # Root endpoint
 @app.get("/")
