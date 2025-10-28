@@ -69,9 +69,8 @@ cp .env.local.template .env
 # Start local PostgreSQL and Redis services
 # See backend/README.md for detailed setup instructions
 
-# Run the application (make sure you're in the backend directory)
-cd backend
-uvicorn app.main:app --reload
+# Run the backend application from project root
+python run.py
 ```
 
 ### API Access
@@ -257,5 +256,17 @@ This project uses OpenSpec for specification-driven development:
 1. **Propose**: Create change proposals in `openspec/changes/`
 2. **Implement**: Follow specs to implement features
 3. **Archive**: Document completed changes in `openspec/specs/`
+
+## Running Backend Services
+
+To start the backend FastAPI server from the project root:
+
+```bash
+python run.py
+```
+
+This will launch the API at <http://localhost:8000> with auto-reload enabled for development.
+
+Make sure your environment and dependencies are set up (see Getting Started above).
 
 See `openspec/AGENTS.md` for detailed workflow instructions.

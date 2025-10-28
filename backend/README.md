@@ -139,7 +139,7 @@ createdb crm_db -O crm_user
 
 #### Using Docker (Recommended)
 ```bash
-docker run --name crm-redis -p 6379:6379 -d redis:7-alpine
+docker run --name crm-redis -p 6400:6400 -d redis:7-alpine
 ```
 
 #### Using Homebrew (macOS)

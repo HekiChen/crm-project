@@ -55,14 +55,14 @@ case $choice in
         else
             echo "📦 Starting Redis container..."
             docker run --name crm-redis-local \
-                -p 6379:6379 \
+                -p 6400:6400 \
                 -d redis:7-alpine
         fi
         
         echo "✅ Database services are running!"
         echo "📝 Use these settings in your .env file:"
         echo "DATABASE_URL=postgresql+asyncpg://crm_user:crm_password@localhost:5432/crm_db"
-        echo "REDIS_URL=redis://localhost:6379/0"
+        echo "REDIS_URL=redis://localhost:6400/0"
         ;;
         
     2)
@@ -80,7 +80,7 @@ case $choice in
         echo "✅ Docker Compose services are running!"
         echo "📝 Use these settings in your .env file:"
         echo "DATABASE_URL=postgresql+asyncpg://crm_user:crm_password@localhost:5433/crm_db"
-        echo "REDIS_URL=redis://localhost:6381/0"
+        echo "REDIS_URL=redis://localhost:6410/0"
         ;;
         
     3)
@@ -109,7 +109,7 @@ case $choice in
         echo "✅ Homebrew services are running!"
         echo "📝 Use these settings in your .env file:"
         echo "DATABASE_URL=postgresql+asyncpg://crm_user:crm_password@localhost:5432/crm_db"
-        echo "REDIS_URL=redis://localhost:6379/0"
+        echo "REDIS_URL=redis://localhost:6400/0"
         ;;
         
     4)
@@ -130,7 +130,7 @@ case $choice in
         echo ""
         echo "4. 'Redis connection failed':"
         echo "   - Check if Redis is running"
-        echo "   - Check the port (6379 for local, 6381 for Docker Compose)"
+        echo "   - Check the port (6400 for local, 6410 for Docker Compose)"
         echo ""
         echo "5. Test connections:"
         echo "   PostgreSQL: pg_isready -h localhost -p 5432"
