@@ -146,7 +146,9 @@ async def create_employee(
         Created employee
     """
     employee = await service.create(employee_in)
-    return EmployeeResponse.model_validate(employee)
+    # Re-fetch with position eagerly loaded to avoid lazy loading during serialization
+    employee_with_position = await service.get_by_id_with_position(employee.id)
+    return EmployeeResponse.model_validate(employee_with_position)
 
 
 @router.get(
@@ -518,7 +520,9 @@ async def update_employee(
             detail="Employee not found",
         )
     
-    return EmployeeResponse.model_validate(employee)
+    # Re-fetch with position eagerly loaded to avoid lazy loading during serialization
+    employee_with_position = await service.get_by_id_with_position(employee.id)
+    return EmployeeResponse.model_validate(employee_with_position)
 
 
 @router.delete(

@@ -42,17 +42,7 @@ class PositionService(BaseService[Position, PositionCreate, PositionUpdate, Posi
     ) -> Position:
         """
         Create a new position with validation.
-        
-        Args:
-            obj_in: The position creation data
-            created_by_id: ID of the user creating the position
-            commit: Whether to commit the transaction
-        
-        Returns:
-            The created position instance
-            
-        Raises:
-            HTTPException: 409 if position code already exists
+        Also validates department_id if provided.
         """
         # Check if code already exists (case-insensitive)
         existing_position = await self.get_by_code(obj_in.code)
@@ -61,7 +51,19 @@ class PositionService(BaseService[Position, PositionCreate, PositionUpdate, Posi
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Position with code '{obj_in.code}' already exists"
             )
-        
+
+        # Validate department_id if provided
+        if hasattr(obj_in, "department_id") and obj_in.department_id is not None:
+            from app.models.department import Department
+            stmt = select(Department).where(Department.id == obj_in.department_id, Department.is_deleted == False)
+            result = await self.db.execute(stmt)
+            dept = result.scalar_one_or_none()
+            if dept is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Department not found or inactive"
+                )
+
         # Create the position using base service method
         return await super().create(obj_in, created_by_id=created_by_id, commit=commit)
     
@@ -110,24 +112,13 @@ class PositionService(BaseService[Position, PositionCreate, PositionUpdate, Posi
     ) -> Optional[Position]:
         """
         Update an existing position with validation.
-        
-        Args:
-            id: The position ID
-            obj_in: The position update data
-            updated_by_id: ID of the user updating the position
-            commit: Whether to commit the transaction
-        
-        Returns:
-            The updated position instance or None if not found
-            
-        Raises:
-            HTTPException: 409 if updated code conflicts with another position
+        Also validates department_id if provided.
         """
         # Check if position exists
         existing_position = await self.get_by_id(id)
         if not existing_position:
             return None
-        
+
         # If code is being updated, check for conflicts
         if obj_in.code is not None and obj_in.code != existing_position.code:
             conflicting_position = await self.get_by_code(obj_in.code)
@@ -136,7 +127,19 @@ class PositionService(BaseService[Position, PositionCreate, PositionUpdate, Posi
                     status_code=status.HTTP_409_CONFLICT,
                     detail=f"Position with code '{obj_in.code}' already exists"
                 )
-        
+
+        # Validate department_id if provided
+        if hasattr(obj_in, "department_id") and obj_in.department_id is not None:
+            from app.models.department import Department
+            stmt = select(Department).where(Department.id == obj_in.department_id, Department.is_deleted == False)
+            result = await self.db.execute(stmt)
+            dept = result.scalar_one_or_none()
+            if dept is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Department not found or inactive"
+                )
+
         # Update using base service method
         return await super().update(id, obj_in, updated_by_id=updated_by_id, commit=commit)
     
