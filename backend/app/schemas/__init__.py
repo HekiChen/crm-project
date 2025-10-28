@@ -19,6 +19,12 @@ from app.schemas.position_schemas import (
     PositionResponse,
     PositionListResponse,
 )
+from app.schemas.department_schemas import (
+    DepartmentCreate,
+    DepartmentUpdate,
+    DepartmentResponse,
+    DepartmentListResponse,
+)
 
 __all__ = [
     "BaseSchema",
@@ -35,4 +41,8 @@ __all__ = [
     "PositionUpdate",
     "PositionResponse",
     "PositionListResponse",
+    "DepartmentCreate",
+    "DepartmentUpdate",
+    "DepartmentResponse",
+    "DepartmentListResponse",
 ]

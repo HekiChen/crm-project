@@ -22,7 +22,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6381:6379"
+      - "6410:6400"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -40,9 +40,9 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://crm_user:crm_password@postgres:5432/crm_db
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - REDIS_URL=redis://redis:6400/0
+      - CELERY_BROKER_URL=redis://redis:6400/0
+      - CELERY_RESULT_BACKEND=redis://redis:6400/0
       - DEBUG=true
       - ENVIRONMENT=development
       - SECRET_KEY=development-secret-key-change-in-production

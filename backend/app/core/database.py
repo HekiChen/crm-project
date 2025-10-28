@@ -1,28 +1,37 @@
 """
 Database configuration and connection management.
 """
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 from sqlalchemy import MetaData
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
 
 
-# SQLAlchemy async engine
-engine = create_async_engine(
-    settings.database_url,
-    echo=settings.debug,
-    pool_pre_ping=True,
-    pool_recycle=300,
-)
+# Lazy engine/session creation to avoid importing DB drivers at module-import time.
+# This makes importing `app.main` safe in environments where the DB driver isn't
+# installed (e.g., for lightweight tooling or preliminary imports).
+engine: Optional[AsyncEngine] = None
+AsyncSessionLocal: Optional[async_sessionmaker] = None
 
-# Async session factory
-AsyncSessionLocal = async_sessionmaker(
-    engine, 
-    class_=AsyncSession,
-    expire_on_commit=False
-)
+
+def _ensure_engine() -> None:
+    """Create the SQLAlchemy async engine and session factory if not present."""
+    global engine, AsyncSessionLocal
+    if engine is None or AsyncSessionLocal is None:
+        engine = create_async_engine(
+            settings.database_url,
+            echo=settings.debug,
+            pool_pre_ping=True,
+            pool_recycle=300,
+        )
+
+        AsyncSessionLocal = async_sessionmaker(
+            engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
 
 
 class Base(DeclarativeBase):
@@ -41,6 +50,9 @@ class Base(DeclarativeBase):
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency for getting database session."""
+    # Ensure engine and session factory exist before creating a session
+    _ensure_engine()
+    assert AsyncSessionLocal is not None
     async with AsyncSessionLocal() as session:
         try:
             yield session
@@ -50,10 +62,13 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db() -> None:
     """Initialize database tables."""
+    _ensure_engine()
+    assert engine is not None
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 
 async def close_db() -> None:
     """Close database connections."""
-    await engine.dispose()
+    if engine is not None:
+        await engine.dispose()

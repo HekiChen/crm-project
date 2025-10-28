@@ -14,7 +14,6 @@ from app.core.database import Base as CoreBase
 
 ModelType = TypeVar("ModelType", bound="BaseModel")
 
-
 class BaseModel(CoreBase):
     """
     Base model class with common fields and functionality.

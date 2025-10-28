@@ -62,10 +62,11 @@ class ResponseFormatterMiddleware:
         status_code = None
         response_headers = []
         response_body = []
+        start_sent = False  # Track if we've sent http.response.start
         
         async def send_wrapper(message: Message) -> None:
             """Wrap send to capture and modify response."""
-            nonlocal status_code, response_headers, response_body
+            nonlocal status_code, response_headers, response_body, start_sent
             
             if message["type"] == "http.response.start":
                 # Capture status code and headers
@@ -76,6 +77,7 @@ class ResponseFormatterMiddleware:
                 if not self._should_format_response(status_code, response_headers):
                     # Pass through without modification
                     await send(message)
+                    start_sent = True
                     return
                 
                 # Store headers, but don't send yet (we need to modify the body first)
@@ -127,12 +129,13 @@ class ResponseFormatterMiddleware:
                     # If we get here, pass through original response
                     if response_body:
                         # Send headers first if not sent yet
-                        if status_code is not None and response_headers:
+                        if not start_sent and status_code is not None and response_headers:
                             await send({
                                 "type": "http.response.start",
                                 "status": status_code,
                                 "headers": response_headers,
                             })
+                            start_sent = True
                         
                         # Send body
                         await send({

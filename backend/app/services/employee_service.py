@@ -43,17 +43,7 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate, Empl
     ) -> Employee:
         """
         Create a new employee with validation.
-        
-        Args:
-            obj_in: The employee creation data
-            created_by_id: ID of the user creating the employee
-            commit: Whether to commit the transaction
-        
-        Returns:
-            The created employee instance
-            
-        Raises:
-            HTTPException: 409 if email already exists
+        Also validates department_id if provided.
         """
         # Check if email already exists (case-insensitive)
         existing_employee = await self.get_by_email(obj_in.email)
@@ -62,7 +52,20 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate, Empl
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Employee with email '{obj_in.email}' already exists"
             )
-        
+
+        # Validate department_id if provided (field may not exist in schema)
+        department_id = getattr(obj_in, 'department_id', None)
+        if department_id is not None:
+            from app.models.department import Department
+            stmt = select(Department).where(Department.id == department_id, Department.is_deleted == False)
+            result = await self.db.execute(stmt)
+            dept = result.scalar_one_or_none()
+            if dept is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Department not found or inactive"
+                )
+
         # Create the employee using base service method
         return await super().create(obj_in, created_by_id=created_by_id, commit=commit)
     
@@ -97,24 +100,13 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate, Empl
     ) -> Optional[Employee]:
         """
         Update an existing employee with validation.
-        
-        Args:
-            id: The employee ID
-            obj_in: The employee update data
-            updated_by_id: ID of the user updating the employee
-            commit: Whether to commit the transaction
-        
-        Returns:
-            The updated employee instance or None if not found
-            
-        Raises:
-            HTTPException: 409 if updated email conflicts with another employee
+        Also validates department_id if provided.
         """
         # Check if employee exists
         existing_employee = await self.get_by_id(id)
         if not existing_employee:
             return None
-        
+
         # If email is being updated, check for conflicts
         if obj_in.email is not None and obj_in.email.lower() != existing_employee.email.lower():
             conflicting_employee = await self.get_by_email(obj_in.email)
@@ -123,7 +115,20 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate, Empl
                     status_code=status.HTTP_409_CONFLICT,
                     detail=f"Employee with email '{obj_in.email}' already exists"
                 )
-        
+
+        # Validate department_id if provided (field may not exist in schema)
+        department_id = getattr(obj_in, 'department_id', None)
+        if department_id is not None:
+            from app.models.department import Department
+            stmt = select(Department).where(Department.id == department_id, Department.is_deleted == False)
+            result = await self.db.execute(stmt)
+            dept = result.scalar_one_or_none()
+            if dept is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Department not found or inactive"
+                )
+
         # Update using base service method
         return await super().update(id, obj_in, updated_by_id=updated_by_id, commit=commit)
     
