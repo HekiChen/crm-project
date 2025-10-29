@@ -6,6 +6,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User } from '@/types'
 import { getToken, setToken, getRefreshToken, setRefreshToken, clearTokens } from '@/utils/token'
+import * as authApi from '@/api/auth'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -20,38 +21,50 @@ export const useAuthStore = defineStore('auth', () => {
   // Actions
 
   /**
-   * Login action - will be implemented when backend auth endpoints are ready
-   * @param username - User's username
+   * Login action
+   * @param username - User's username or email
    * @param password - User's password
    */
   async function login(username: string, password: string): Promise<void> {
-    // TODO: Implement when backend /api/v1/auth/login is available
-    // For now, this is a placeholder
-    console.log('Login called with:', username, password)
-    
-    // Placeholder: Set mock data
-    // const response = await loginApi({ username, password })
-    // setTokenValue(response.access_token)
-    // if (response.refresh_token) {
-    //   setRefreshTokenValue(response.refresh_token)
-    // }
-    // await fetchUserInfo()
-    
-    throw new Error('Backend auth endpoints not implemented yet')
+    try {
+      const response = await authApi.login({ username, password })
+      const loginData = response.data
+
+      // Set tokens
+      setTokenValue(loginData.access_token)
+      if (loginData.refresh_token) {
+        setRefreshTokenValue(loginData.refresh_token)
+      }
+
+      // Fetch user info
+      await fetchUserInfo()
+    } catch (error) {
+      // Clear any partial state on error
+      user.value = null
+      token.value = null
+      refreshToken.value = null
+      clearTokens()
+      throw error
+    }
   }
 
   /**
    * Logout action
    */
   async function logout(): Promise<void> {
-    // TODO: Call backend logout API if needed
-    // await logoutApi()
-    
-    // Clear state
-    user.value = null
-    token.value = null
-    refreshToken.value = null
-    clearTokens()
+    try {
+      // Call backend logout API
+      await authApi.logout()
+    } catch (error) {
+      // Continue with logout even if API call fails
+      console.error('Logout API error:', error)
+    } finally {
+      // Clear state regardless of API result
+      user.value = null
+      token.value = null
+      refreshToken.value = null
+      clearTokens()
+    }
   }
 
   /**
@@ -71,29 +84,35 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * Refresh access token - will be implemented when backend is ready
+   * Refresh access token
    */
   async function refreshAccessToken(): Promise<void> {
-    // TODO: Implement when backend /api/v1/auth/refresh is available
-    // const currentRefreshToken = refreshToken.value
-    // if (!currentRefreshToken) {
-    //   throw new Error('No refresh token available')
-    // }
-    // const response = await refreshTokenApi({ refresh_token: currentRefreshToken })
-    // setTokenValue(response.access_token)
-    
-    throw new Error('Backend auth endpoints not implemented yet')
+    const currentRefreshToken = refreshToken.value
+    if (!currentRefreshToken) {
+      throw new Error('No refresh token available')
+    }
+
+    try {
+      const response = await authApi.refreshToken({ refresh_token: currentRefreshToken })
+      setTokenValue(response.data.access_token)
+    } catch (error) {
+      // If refresh fails, logout user
+      await logout()
+      throw error
+    }
   }
 
   /**
    * Fetch current user information
    */
   async function fetchUserInfo(): Promise<void> {
-    // TODO: Implement when backend /api/v1/auth/me is available
-    // const userInfo = await getCurrentUserApi()
-    // user.value = userInfo
-    
-    throw new Error('Backend auth endpoints not implemented yet')
+    try {
+      const response = await authApi.getCurrentUser()
+      user.value = response.data
+    } catch (error) {
+      console.error('Failed to fetch user info:', error)
+      throw error
+    }
   }
 
   /**

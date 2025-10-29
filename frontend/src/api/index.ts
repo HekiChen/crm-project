@@ -29,9 +29,14 @@ instance.interceptors.request.use(
   },
 )
 
-// Response interceptor - handle errors
+// Response interceptor - unwrap response and handle errors
 instance.interceptors.response.use(
   (response) => {
+    // Backend wraps all responses in {data: {...}, meta: {...}}
+    // Unwrap to return just the inner data for cleaner API
+    if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+      response.data = response.data.data
+    }
     return response
   },
   async (error: AxiosError<ApiError>) => {

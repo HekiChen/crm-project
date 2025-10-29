@@ -5,14 +5,15 @@
 import type { Role } from './role'
 
 export interface User {
-  id: number
-  username: string
-  email?: string
-  full_name?: string
+  id: string
+  email: string
+  first_name: string
+  last_name: string
+  full_name: string
+  employee_number: string
+  hire_date: string
   is_active: boolean
-  roles?: Role[]
-  created_at?: string
-  updated_at?: string
+  roles: Role[]
 }
 
 export interface Employee {
