@@ -22,6 +22,7 @@ from app.api.positions import router as positions_router
 from app.api.departments import router as departments_router
 from app.api.roles import router as roles_router
 from app.api.menus import router as menus_router
+from app.api.stats import router as stats_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -79,9 +80,10 @@ app.include_router(health_router, prefix=settings.api_v1_str, tags=["health"])
 app.include_router(auth_router, prefix=settings.api_v1_str)
 app.include_router(employees_router, prefix="/api/v1/employees", tags=["employees"])
 app.include_router(positions_router, prefix="/api/v1/positions", tags=["positions"])
-app.include_router(departments_router, prefix="/api/v1/departments", tags=["departments"])
-app.include_router(roles_router, prefix="/api/v1", tags=["roles"])
-app.include_router(menus_router, prefix="/api/v1/menus", tags=["menus"])
+app.include_router(departments_router, prefix="/api/v1")
+app.include_router(roles_router, prefix="/api/v1")
+app.include_router(menus_router, prefix="/api/v1")
+app.include_router(stats_router, prefix="/api/v1")
 
 # Root endpoint
 @app.get("/")

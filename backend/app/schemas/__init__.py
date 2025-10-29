@@ -32,6 +32,9 @@ from app.schemas.auth import (
     RoleInfo,
     UserInfo,
 )
+from app.schemas.stats import (
+    DashboardStatsResponse,
+)
 
 __all__ = [
     "BaseSchema",
@@ -57,4 +60,5 @@ __all__ = [
     "RefreshRequest",
     "RoleInfo",
     "UserInfo",
+    "DashboardStatsResponse",
 ]

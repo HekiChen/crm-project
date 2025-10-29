@@ -4,14 +4,14 @@
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ApiResponse<T = any> {
-  code?: number
+  status?: number
   message?: string
   data: T
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ApiListResponse<T = any> {
-  code?: number
+  status?: number
   message?: string
   data: {
     items: T[]
@@ -22,7 +22,7 @@ export interface ApiListResponse<T = any> {
 }
 
 export interface ApiError {
-  code: number
+  status: number
   message: string
   detail?: unknown
 }

@@ -35,6 +35,42 @@ export const routes: RouteRecordRaw[] = [
           title: 'Dashboard',
         },
       },
+      {
+        path: '/employees',
+        name: 'Employees',
+        component: () => import('@/views/EmployeesList.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Employees',
+        },
+      },
+      {
+        path: '/departments',
+        name: 'Departments',
+        component: () => import('@/views/DepartmentsList.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Departments',
+        },
+      },
+      {
+        path: '/roles',
+        name: 'Roles',
+        component: () => import('@/views/RolesList.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Roles',
+        },
+      },
+      {
+        path: '/work-logs',
+        name: 'WorkLogs',
+        component: () => import('@/views/WorkLogsList.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Work Logs',
+        },
+      },
       // Add more protected routes here as needed
     ],
   },
