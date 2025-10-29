@@ -18,7 +18,26 @@
           <template #title>Dashboard</template>
         </el-menu-item>
 
-        <!-- Add more menu items here as needed -->
+        <el-menu-item index="/employees">
+          <el-icon><User /></el-icon>
+          <template #title>Employees</template>
+        </el-menu-item>
+
+        <el-menu-item index="/departments">
+          <el-icon><OfficeBuilding /></el-icon>
+          <template #title>Departments</template>
+        </el-menu-item>
+
+        <!-- Roles menu - only show for managers -->
+        <el-menu-item v-if="isManager" index="/roles">
+          <el-icon><Avatar /></el-icon>
+          <template #title>Roles</template>
+        </el-menu-item>
+
+        <el-menu-item index="/work-logs">
+          <el-icon><Calendar /></el-icon>
+          <template #title>Work Logs</template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -81,6 +100,10 @@ import {
   SwitchButton,
   Expand,
   Fold,
+  User,
+  OfficeBuilding,
+  Avatar,
+  Calendar,
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -98,6 +121,12 @@ const sidebarCollapsed = ref(false)
 // Computed
 const user = computed(() => authStore.user)
 const activeMenu = computed(() => route.path)
+
+// Check if user has manager role
+const isManager = computed(() => {
+  if (!user.value?.roles) return false
+  return user.value.roles.some(role => role.code.toLocaleLowerCase() === 'manager')
+})
 
 // Methods
 const toggleSidebar = () => {

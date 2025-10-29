@@ -7,8 +7,8 @@
 
     <el-row :gutter="20" class="dashboard-cards">
       <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="summary-card">
-          <div class="card-content">
+        <el-card shadow="hover" class="summary-card clickable" @click="navigateToEmployees">
+          <div class="card-content" v-loading="loading">
             <div class="card-icon employees">
               <el-icon :size="32"><User /></el-icon>
             </div>
@@ -21,8 +21,8 @@
       </el-col>
 
       <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="summary-card">
-          <div class="card-content">
+        <el-card shadow="hover" class="summary-card clickable" @click="navigateToDepartments">
+          <div class="card-content" v-loading="loading">
             <div class="card-icon departments">
               <el-icon :size="32"><OfficeBuilding /></el-icon>
             </div>
@@ -34,9 +34,9 @@
         </el-card>
       </el-col>
 
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="summary-card">
-          <div class="card-content">
+      <el-col v-if="isManager" :xs="24" :sm="12" :md="6">
+        <el-card shadow="hover" class="summary-card clickable" @click="navigateToRoles">
+          <div class="card-content" v-loading="loading">
             <div class="card-icon roles">
               <el-icon :size="32"><UserFilled /></el-icon>
             </div>
@@ -49,8 +49,8 @@
       </el-col>
 
       <el-col :xs="24" :sm="12" :md="6">
-        <el-card shadow="hover" class="summary-card">
-          <div class="card-content">
+        <el-card shadow="hover" class="summary-card clickable" @click="navigateToActivities">
+          <div class="card-content" v-loading="loading">
             <div class="card-icon activities">
               <el-icon :size="32"><Clock /></el-icon>
             </div>
@@ -112,19 +112,33 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { User, OfficeBuilding, UserFilled, Clock } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
+import { getDashboardStats } from '@/api/stats'
 
 defineOptions({
   name: 'DashboardPage',
 })
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 // Computed
 const user = computed(() => authStore.user)
 
-// Summary data (placeholder - will be fetched from API in the future)
+// Check if user has manager role
+const isManager = computed(() => {
+  if (!user.value?.roles) return false
+  return user.value.roles.some(role => role.code.toLocaleLowerCase() === 'manager')
+})
+
+// State
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+// Summary data
 const summaryData = ref({
   totalEmployees: 0,
   totalDepartments: 0,
@@ -139,14 +153,48 @@ onMounted(() => {
 
 // Methods
 const loadDashboardData = async () => {
-  // TODO: Fetch real data from API
-  // For now, show placeholder data
-  summaryData.value = {
-    totalEmployees: 42,
-    totalDepartments: 8,
-    totalRoles: 5,
-    recentActivities: 23,
+  try {
+    loading.value = true
+    error.value = null
+
+    const response = await getDashboardStats()
+    console.log('Dashboard Stats Response Data:', response)
+    if (response.status === 200 && response?.data) {
+      
+      summaryData.value = {
+        totalEmployees: response.data.total_employees,
+        totalDepartments: response.data.total_departments,
+        totalRoles: response.data.total_roles,
+        recentActivities: response.data.recent_activities,
+      }
+    } else {
+      throw new Error(response.message || 'Failed to load dashboard statistics')
+    }
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to load dashboard statistics'
+    error.value = errorMessage
+    ElMessage.error(errorMessage)
+    console.error('Error loading dashboard data:', err)
+  } finally {
+    loading.value = false
   }
+}
+
+// Navigation methods
+const navigateToEmployees = () => {
+  router.push('/employees')
+}
+
+const navigateToDepartments = () => {
+  router.push('/departments')
+}
+
+const navigateToRoles = () => {
+  router.push('/roles')
+}
+
+const navigateToActivities = () => {
+  router.push('/work-logs')
 }
 </script>
 
@@ -180,6 +228,14 @@ const loadDashboardData = async () => {
 .summary-card {
   cursor: pointer;
   transition: transform 0.3s;
+}
+
+.summary-card.clickable {
+  cursor: pointer;
+}
+
+.summary-card.clickable:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .summary-card:hover {
