@@ -44,6 +44,22 @@ Represents employee entities in the system.    """
         doc="The email field"
     )
     
+    # password_hash
+    password_hash: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+        doc="Bcrypt-hashed password for authentication. NULL if employee doesn't have login access."
+    )
+    
+    # is_active
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="1",
+        doc="Whether the employee account is active. Inactive employees cannot login."
+    )
+    
     # Relationships
     position: Mapped[Optional["Position"]] = relationship(
         "Position",

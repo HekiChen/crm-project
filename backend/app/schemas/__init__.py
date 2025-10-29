@@ -25,6 +25,13 @@ from app.schemas.department_schemas import (
     DepartmentResponse,
     DepartmentListResponse,
 )
+from app.schemas.auth import (
+    LoginRequest,
+    TokenResponse,
+    RefreshRequest,
+    RoleInfo,
+    UserInfo,
+)
 
 __all__ = [
     "BaseSchema",
@@ -45,4 +52,9 @@ __all__ = [
     "DepartmentUpdate",
     "DepartmentResponse",
     "DepartmentListResponse",
+    "LoginRequest",
+    "TokenResponse",
+    "RefreshRequest",
+    "RoleInfo",
+    "UserInfo",
 ]

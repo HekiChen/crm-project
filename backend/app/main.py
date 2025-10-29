@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from app.core.config import settings
 from app.core.database import init_db, close_db
 from app.api.health import router as health_router
+from app.api.auth import router as auth_router
 from app.middleware.security import (
     SecurityHeadersMiddleware,
     RateLimitMiddleware,
@@ -75,6 +76,7 @@ register_exception_handlers(app)
 
 # Include routers
 app.include_router(health_router, prefix=settings.api_v1_str, tags=["health"])
+app.include_router(auth_router, prefix=settings.api_v1_str)
 app.include_router(employees_router, prefix="/api/v1/employees", tags=["employees"])
 app.include_router(positions_router, prefix="/api/v1/positions", tags=["positions"])
 app.include_router(departments_router, prefix="/api/v1/departments", tags=["departments"])
