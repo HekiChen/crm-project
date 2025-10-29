@@ -75,3 +75,24 @@ def mock_settings():
         "debug": True,
         "environment": "testing"
     }
+
+@pytest.fixture
+def role_service(db_session: AsyncSession):
+    """Provide role service instance for testing."""
+    from app.services.role_service import RoleService
+    return RoleService(db_session)
+
+
+@pytest.fixture
+def menu_service(db_session: AsyncSession):
+    """Provide menu service instance for testing."""
+    from app.services.menu_service import MenuService
+    return MenuService(db_session)
+
+
+@pytest.fixture
+def role_menu_perm_service(db_session: AsyncSession):
+    """Provide role_menu_perm service instance for testing."""
+    from app.services.role_menu_perm_service import RoleMenuPermService
+    return RoleMenuPermService(db_session)
+
