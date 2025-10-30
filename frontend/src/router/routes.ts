@@ -71,6 +71,26 @@ export const routes: RouteRecordRaw[] = [
           title: 'Work Logs',
         },
       },
+      // Department detail page
+      {
+        path: '/departments/:id',
+        name: 'DepartmentDetail',
+        component: () => import('@/views/DepartmentDetail.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Department Details',
+        },
+      },
+      // Employee detail page
+      {
+        path: '/employees/:id',
+        name: 'EmployeeDetail',
+        component: () => import('@/views/EmployeeDetail.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Employee Details',
+        },
+      },
       // Add more protected routes here as needed
     ],
   },

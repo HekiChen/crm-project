@@ -25,7 +25,7 @@ from app.services.role_service import RoleService
 from app.services.role_menu_perm_service import RoleMenuPermService
 
 
-router = APIRouter(prefix="/roles", tags=["roles"])
+router = APIRouter(tags=["roles"])
 
 
 def get_role_service(db: AsyncSession = Depends(get_db)) -> RoleService:

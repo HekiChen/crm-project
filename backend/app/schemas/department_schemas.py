@@ -9,6 +9,13 @@ from pydantic import Field, field_validator
 from app.schemas.base import CreateSchema, UpdateSchema, ResponseSchema, ListResponseSchema
 
 
+class ManagerSummary(ResponseSchema):
+    """Minimal manager information for department display purposes only"""
+    id: UUID = Field(..., description="Manager employee ID")
+    first_name: str = Field(..., description="Manager first name")
+    last_name: str = Field(..., description="Manager last name")
+
+
 class DepartmentCreate(CreateSchema):
     name: str = Field(..., description="Department name", min_length=1, max_length=200)
     code: str = Field(..., description="Unique department code", min_length=1, max_length=50)
@@ -65,6 +72,7 @@ class DepartmentResponse(ResponseSchema):
     description: Optional[str] = Field(None, description="Department description")
     parent_id: Optional[UUID] = Field(None, description="Parent department ID")
     manager_id: Optional[UUID] = Field(None, description="Manager employee ID")
+    manager: Optional[ManagerSummary] = Field(None, description="Manager details (null if manager is inactive, deleted, or not assigned)")
     is_active: bool = Field(..., description="Active status")
     children: Optional[List[UUID]] = Field(default=None, description="List of child department IDs (shallow)")
 

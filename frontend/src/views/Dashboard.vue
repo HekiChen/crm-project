@@ -111,28 +111,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, OfficeBuilding, UserFilled, Clock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { useAuthStore } from '@/stores/auth'
+import { useAuth } from '@/composables/useAuth'
 import { getDashboardStats } from '@/api/stats'
 
 defineOptions({
   name: 'DashboardPage',
 })
 
-const authStore = useAuthStore()
 const router = useRouter()
-
-// Computed
-const user = computed(() => authStore.user)
-
-// Check if user has manager role
-const isManager = computed(() => {
-  if (!user.value?.roles) return false
-  return user.value.roles.some(role => role.code.toLocaleLowerCase() === 'manager')
-})
+const { user, isManager } = useAuth()
 
 // State
 const loading = ref(false)
