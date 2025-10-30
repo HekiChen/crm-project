@@ -63,6 +63,15 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: '/roles/:id',
+        name: 'RoleDetail',
+        component: () => import('@/views/RoleDetail.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Role Details',
+        },
+      },
+      {
         path: '/work-logs',
         name: 'WorkLogs',
         component: () => import('@/views/WorkLogsList.vue'),

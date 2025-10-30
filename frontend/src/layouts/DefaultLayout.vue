@@ -28,8 +28,8 @@
           <template #title>Departments</template>
         </el-menu-item>
 
-        <!-- Roles menu - only show for managers -->
-        <el-menu-item v-if="isManager" index="/roles">
+        <!-- Roles menu - only show for managers and admins -->
+        <el-menu-item v-if="isManagerOrAdmin" index="/roles">
           <el-icon><Avatar /></el-icon>
           <template #title>Roles</template>
         </el-menu-item>
@@ -115,7 +115,7 @@ defineOptions({
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const { user, isManager } = useAuth()
+const { user, isManagerOrAdmin } = useAuth()
 
 // Sidebar state
 const sidebarCollapsed = ref(false)

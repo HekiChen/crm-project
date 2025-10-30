@@ -34,7 +34,7 @@
         </el-card>
       </el-col>
 
-      <el-col v-if="isManager" :xs="24" :sm="12" :md="6">
+      <el-col v-if="isManagerOrAdmin" :xs="24" :sm="12" :md="6">
         <el-card shadow="hover" class="summary-card clickable" @click="navigateToRoles">
           <div class="card-content" v-loading="loading">
             <div class="card-icon roles">
@@ -123,7 +123,7 @@ defineOptions({
 })
 
 const router = useRouter()
-const { user, isManager } = useAuth()
+const { user, isManagerOrAdmin } = useAuth()
 
 // State
 const loading = ref(false)

@@ -13,12 +13,14 @@ from app.schemas.role import (
     RoleUpdate,
     RoleResponse,
     RoleListResponse,
+    RoleEmployeeResponse,
 )
 from app.schemas.role_menu_perm import (
     RoleMenuPermCreate,
     RoleMenuPermBatchCreate,
     RoleMenuPermUpdate,
     RoleMenuPermResponse,
+    RoleMenuPermWithMenuResponse,
 )
 from app.schemas.base import PaginationParams, MessageResponse
 from app.services.role_service import RoleService
@@ -52,6 +54,7 @@ async def create_role(
 async def list_roles(
     pagination: PaginationParams = Depends(),
     is_system_role: bool = Query(None, description="Filter by system role flag"),
+    search: str = Query(None, description="Search by role name or code"),
     service: RoleService = Depends(get_role_service),
 ) -> Any:
     """Get paginated list of roles with optional filtering."""
@@ -59,7 +62,11 @@ async def list_roles(
     if is_system_role is not None:
         filters["is_system_role"] = is_system_role
     
-    result = await service.get_list(pagination=pagination, filters=filters if filters else None)
+    result = await service.get_list(
+        pagination=pagination,
+        filters=filters if filters else None,
+        search=search
+    )
     return result
 
 
@@ -112,14 +119,36 @@ async def delete_role(
     )
 
 
-@router.get("/{id}/permissions", response_model=List[RoleMenuPermResponse])
+@router.get("/{id}/permissions", response_model=List[RoleMenuPermWithMenuResponse])
 async def get_role_permissions(
     id: UUID,
+    service: RoleService = Depends(get_role_service),
     perm_service: RoleMenuPermService = Depends(get_role_menu_perm_service)
 ) -> Any:
-    """Get all menu permissions for a role."""
-    permissions = await perm_service.get_by_role(id)
-    return [RoleMenuPermResponse.model_validate(perm) for perm in permissions]
+    """Get all menu permissions for a role with menu details."""
+    permissions = await service.get_permissions(id)
+    
+    # Transform to response schema with menu details
+    return [
+        RoleMenuPermWithMenuResponse(
+            id=perm.id,
+            created_at=perm.created_at,
+            updated_at=perm.updated_at,
+            created_by_id=perm.created_by_id,
+            updated_by_id=perm.updated_by_id,
+            role_id=perm.role_id,
+            menu_id=perm.menu_id,
+            menu_name=perm.menu.name,
+            menu_path=perm.menu.path,
+            menu_type=perm.menu.menu_type,
+            menu_icon=perm.menu.icon,
+            parent_id=perm.menu.parent_id,
+            can_read=perm.can_read,
+            can_write=perm.can_write,
+            can_delete=perm.can_delete,
+        )
+        for perm in permissions
+    ]
 
 
 @router.post("/{id}/permissions", response_model=RoleMenuPermResponse, status_code=status.HTTP_201_CREATED)
@@ -194,21 +223,29 @@ async def delete_role_permission(
     )
 
 
-@router.get("/{id}/employees", response_model=List[dict])
+@router.get("/{id}/employees", response_model=List[RoleEmployeeResponse])
 async def get_role_employees(
     id: UUID,
     service: RoleService = Depends(get_role_service)
 ) -> Any:
     """Get all employees assigned to this role."""
     employee_roles = await service.get_employees(id)
-    # Return simplified dict representation for now
+    
+    # Transform to response schema with employee details
     return [
-        {
-            "id": str(er.id),
-            "employee_id": str(er.employee_id),
-            "role_id": str(er.role_id),
-            "assigned_at": er.assigned_at.isoformat() if er.assigned_at else None,
-            "assigned_by_id": str(er.assigned_by_id) if er.assigned_by_id else None,
-        }
+        RoleEmployeeResponse(
+            id=er.id,
+            created_at=er.assigned_at,
+            updated_at=er.assigned_at,
+            created_by_id=er.assigned_by_id,
+            updated_by_id=er.assigned_by_id,
+            employee_id=er.employee_id,
+            employee_name=f"{er.employee.first_name} {er.employee.last_name}",
+            email=er.employee.email,
+            position=er.employee.position.name if er.employee.position else None,
+            department=er.employee.department.name if er.employee.department else None,
+            assigned_at=er.assigned_at,
+            assigned_by_id=er.assigned_by_id,
+        )
         for er in employee_roles
     ]
