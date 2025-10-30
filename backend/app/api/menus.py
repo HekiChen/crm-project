@@ -18,7 +18,7 @@ from app.schemas.menu import (
 from app.schemas.base import PaginationParams
 from app.services.menu_service import MenuService
 
-router = APIRouter()
+router = APIRouter(tags=["menus"])
 
 
 def get_menu_service(db: AsyncSession = Depends(get_db)) -> MenuService:

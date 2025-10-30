@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import noload
+from sqlalchemy.orm import noload, selectinload
 
 from app.models.department import Department
 from app.models.employee import Employee
@@ -16,6 +16,7 @@ from app.schemas.department_schemas import (
     DepartmentUpdate,
     DepartmentResponse,
     DepartmentListResponse,
+    ManagerSummary,
 )
 from app.schemas.base import PaginationParams
 from app.services.base import BaseService
@@ -24,6 +25,24 @@ from app.services.base import BaseService
 class DepartmentService(BaseService[Department, DepartmentCreate, DepartmentUpdate, DepartmentResponse]):
     def __init__(self, db: AsyncSession):
         super().__init__(Department, db, DepartmentResponse)
+
+    def _to_response_with_manager(self, department: Department) -> DepartmentResponse:
+        """
+        Transform Department model to DepartmentResponse with manager filtering.
+        Only includes manager details if the manager is active and not deleted.
+        """
+        # Filter manager: only include if active and not deleted
+        manager_summary = None
+        if (department.manager_employee and 
+            not department.manager_employee.is_deleted and 
+            department.manager_employee.is_active):
+            manager_summary = ManagerSummary.model_validate(department.manager_employee)
+        
+        # Use model_validate with from_attributes, then set manager field
+        response = DepartmentResponse.model_validate(department, from_attributes=True)
+        response.manager = manager_summary
+        response.children = None
+        return response
 
     async def get_by_id(
         self,
@@ -35,6 +54,7 @@ class DepartmentService(BaseService[Department, DepartmentCreate, DepartmentUpda
         Get department by ID with relationships noload to prevent lazy loading.
         """
         stmt = select(Department).where(Department.id == id).options(
+            selectinload(Department.manager_employee),
             noload(Department.children),
             noload(Department.parent),
             noload(Department.employees),
@@ -139,6 +159,7 @@ class DepartmentService(BaseService[Department, DepartmentCreate, DepartmentUpda
             Department.parent_id == id, 
             Department.is_deleted == False  # noqa: E712
         ).options(
+            selectinload(Department.manager_employee),
             noload(Department.children),
             noload(Department.parent),
             noload(Department.employees),
@@ -163,8 +184,9 @@ class DepartmentService(BaseService[Department, DepartmentCreate, DepartmentUpda
         """
         Get paginated list of departments with children relationship disabled to avoid lazy loading.
         """
-        # Build base query with noload for relationships
+        # Build base query with noload for relationships (except manager_employee which uses selectinload)
         query = select(Department).options(
+            selectinload(Department.manager_employee),
             noload(Department.children),
             noload(Department.parent),
             noload(Department.employees),
@@ -211,8 +233,8 @@ class DepartmentService(BaseService[Department, DepartmentCreate, DepartmentUpda
         result = await self.db.execute(query)
         db_objects = list(result.scalars().all())
         
-        # Convert to response schemas without triggering lazy loads
-        response_data = [DepartmentResponse.model_validate(obj) for obj in db_objects]
+        # Convert to response schemas with manager filtering
+        response_data = [self._to_response_with_manager(obj) for obj in db_objects]
         
         # Explicitly set children to None to avoid any lazy loading attempts
         for item in response_data:

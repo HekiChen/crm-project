@@ -106,6 +106,7 @@ import {
   Calendar,
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { useAuth } from '@/composables/useAuth'
 
 defineOptions({
   name: 'DefaultLayout',
@@ -114,19 +115,13 @@ defineOptions({
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const { user, isManager } = useAuth()
 
 // Sidebar state
 const sidebarCollapsed = ref(false)
 
 // Computed
-const user = computed(() => authStore.user)
 const activeMenu = computed(() => route.path)
-
-// Check if user has manager role
-const isManager = computed(() => {
-  if (!user.value?.roles) return false
-  return user.value.roles.some(role => role.code.toLocaleLowerCase() === 'manager')
-})
 
 // Methods
 const toggleSidebar = () => {

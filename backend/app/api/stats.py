@@ -14,7 +14,7 @@ from app.models.employee import Employee
 from app.schemas.stats import DashboardStatsResponse
 from app.services.stats_service import StatsService
 
-router = APIRouter(prefix="/stats", tags=["statistics"])
+router = APIRouter(tags=["stats"])
 
 
 def get_stats_service(db: AsyncSession = Depends(get_db)) -> StatsService:

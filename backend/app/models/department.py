@@ -106,7 +106,13 @@ class Department(BaseModel):
         doc="Child departments in hierarchy"
     )
     
-    # Manager relationship (note: defined in Employee model as managed_departments)
+    # Manager relationship
+    manager_employee: Mapped[Optional["Employee"]] = relationship(
+        "Employee",
+        foreign_keys=[manager_id],
+        lazy="select",
+        doc="Employee who manages this department"
+    )
     
     def __repr__(self) -> str:
         """String representation of Department."""
