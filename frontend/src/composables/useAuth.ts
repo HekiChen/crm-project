@@ -16,6 +16,16 @@ export function useAuth() {
   const user = computed(() => authStore.user)
   
   /**
+   * Check if current user has admin role
+   */
+  const isAdmin = computed(() => {
+    if (!user.value?.roles) return false
+    return user.value.roles.some(role => 
+      role.code.toLowerCase() === 'admin'
+    )
+  })
+  
+  /**
    * Check if current user has manager role
    */
   const isManager = computed(() => {
@@ -23,6 +33,14 @@ export function useAuth() {
     return user.value.roles.some(role => 
       role.code.toLowerCase() === 'manager'
     )
+  })
+  
+  /**
+   * Check if current user has manager or admin role
+   * Useful for access control where both roles have permission
+   */
+  const isManagerOrAdmin = computed(() => {
+    return isAdmin.value || isManager.value
   })
   
   /**
@@ -39,7 +57,9 @@ export function useAuth() {
   
   return {
     user,
+    isAdmin,
     isManager,
+    isManagerOrAdmin,
     hasRole
   }
 }

@@ -2,7 +2,7 @@
   <div class="departments-list">
     <div class="page-header">
       <h1>Departments</h1>
-      <el-button v-if="isManager" type="primary" @click="handleCreate">
+      <el-button v-if="isManagerOrAdmin" type="primary" @click="handleCreate">
         <el-icon><Plus /></el-icon>
         Add Department
       </el-button>
@@ -24,7 +24,12 @@
           </el-input>
         </el-form-item>
         <el-form-item label="Status">
-          <el-select v-model="statusFilter" placeholder="All" @change="loadDepartments">
+          <el-select 
+            v-model="statusFilter" 
+            placeholder="All" 
+            style="width: 120px"
+            @change="loadDepartments"
+          >
             <el-option label="All" :value="null" />
             <el-option label="Active" :value="true" />
             <el-option label="Inactive" :value="false" />
@@ -82,7 +87,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column v-if="isManager" label="Actions" width="150" fixed="right">
+        <el-table-column v-if="isManagerOrAdmin" label="Actions" width="150" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="handleEdit(row)">
               <el-icon><Edit /></el-icon>
@@ -176,7 +181,7 @@ defineOptions({
   name: 'DepartmentsListPage',
 })
 
-const { isManager } = useAuth()
+const { isManagerOrAdmin } = useAuth()
 const router = useRouter()
 
 // State

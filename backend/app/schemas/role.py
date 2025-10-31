@@ -36,3 +36,14 @@ class RoleListResponse(ListResponseSchema[RoleResponse]):
     """Schema for paginated role list response."""
     pass
 
+
+class RoleEmployeeResponse(ResponseSchema):
+    """Schema for employee assigned to a role."""
+    employee_id: UUID = Field(..., description="Employee ID")
+    employee_name: str = Field(..., description="Full name of the employee")
+    email: str = Field(..., description="Employee email")
+    position: Optional[str] = Field(None, description="Position/job title")
+    department: Optional[str] = Field(None, description="Department name")
+    assigned_at: datetime = Field(..., description="When the role was assigned")
+    assigned_by_id: Optional[UUID] = Field(None, description="ID of user who assigned the role")
+

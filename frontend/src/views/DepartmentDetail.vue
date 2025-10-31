@@ -5,7 +5,7 @@
         <span class="page-title">{{ department?.name || 'Department Details' }}</span>
       </template>
       <template #extra>
-        <el-space v-if="isManager && department">
+        <el-space v-if="isManagerOrAdmin && department">
           <el-button @click="handleEdit">
             <el-icon><Edit /></el-icon>
             Edit
@@ -112,7 +112,7 @@ defineOptions({
 
 const route = useRoute()
 const router = useRouter()
-const { isManager } = useAuth()
+const { isManagerOrAdmin } = useAuth()
 
 const loading = ref(false)
 const error = ref<string | null>(null)

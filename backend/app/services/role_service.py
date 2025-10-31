@@ -5,13 +5,15 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import noload
+from sqlalchemy.orm import noload, joinedload
 
 from app.models.role import Role
+from app.models.employee import Employee
 from app.models.employee_role import EmployeeRole
 from app.models.role_menu_perm import RoleMenuPerm
+from app.models.menu import Menu
 from app.schemas.role import (
     RoleCreate,
     RoleUpdate,
@@ -96,6 +98,28 @@ class RoleService(BaseService[Role, RoleCreate, RoleUpdate, RoleResponse]):
         
         db_obj = Role(**obj_data)
         self.db.add(db_obj)
+        
+        # Flush to get the role ID before creating permissions
+        await self.db.flush()
+        
+        # Auto-assign permissions for all menus
+        stmt = select(Menu).where(Menu.is_deleted == False)  # noqa: E712
+        result = await self.db.execute(stmt)
+        menus = result.scalars().all()
+        
+        for menu in menus:
+            # For "Roles" menu, set all permissions to False (no access)
+            # For other menus, grant read-only access
+            is_roles_menu = menu.name == "Roles"
+            perm = RoleMenuPerm(
+                role_id=db_obj.id,
+                menu_id=menu.id,
+                can_read=not is_roles_menu,  # False for Roles, True for others
+                can_write=False,
+                can_delete=False,
+                created_by_id=created_by_id
+            )
+            self.db.add(perm)
         
         if commit:
             await self.db.commit()
@@ -193,12 +217,14 @@ class RoleService(BaseService[Role, RoleCreate, RoleUpdate, RoleResponse]):
         *,
         pagination: PaginationParams,
         filters: Optional[Dict[str, Any]] = None,
+        search: Optional[str] = None,
         include_deleted: bool = False,
     ) -> RoleListResponse:
         """
-        Get paginated list of roles with optional filtering.
+        Get paginated list of roles with optional filtering and search.
         
         Supports filtering by is_system_role via filters dict.
+        Supports searching by role name or code.
         """
         # Build base query with noload
         query = select(Role).options(
@@ -209,6 +235,16 @@ class RoleService(BaseService[Role, RoleCreate, RoleUpdate, RoleResponse]):
         # Apply soft-delete filter
         if not include_deleted:
             query = query.where(Role.is_deleted == False)  # noqa: E712
+        
+        # Apply search
+        if search:
+            search_term = f"%{search}%"
+            query = query.where(
+                or_(
+                    Role.name.ilike(search_term),
+                    Role.code.ilike(search_term)
+                )
+            )
         
         # Apply filters
         if filters:
@@ -258,7 +294,7 @@ class RoleService(BaseService[Role, RoleCreate, RoleUpdate, RoleResponse]):
         )
 
     async def get_permissions(self, role_id: UUID) -> List[RoleMenuPerm]:
-        """Get all menu permissions for a role."""
+        """Get all menu permissions for a role with menu details."""
         role = await self.get_by_id(role_id)
         if not role:
             raise HTTPException(
@@ -266,15 +302,19 @@ class RoleService(BaseService[Role, RoleCreate, RoleUpdate, RoleResponse]):
                 detail="Role not found"
             )
         
-        stmt = select(RoleMenuPerm).where(
-            RoleMenuPerm.role_id == role_id,
-            RoleMenuPerm.is_deleted == False  # noqa: E712
+        stmt = (
+            select(RoleMenuPerm)
+            .where(
+                RoleMenuPerm.role_id == role_id,
+                RoleMenuPerm.is_deleted == False  # noqa: E712
+            )
+            .options(joinedload(RoleMenuPerm.menu))
         )
         result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        return list(result.unique().scalars().all())
 
     async def get_employees(self, role_id: UUID) -> List[EmployeeRole]:
-        """Get all employees assigned to a role."""
+        """Get all employees assigned to a role with employee details."""
         role = await self.get_by_id(role_id)
         if not role:
             raise HTTPException(
@@ -282,6 +322,13 @@ class RoleService(BaseService[Role, RoleCreate, RoleUpdate, RoleResponse]):
                 detail="Role not found"
             )
         
-        stmt = select(EmployeeRole).where(EmployeeRole.role_id == role_id)
+        stmt = (
+            select(EmployeeRole)
+            .where(EmployeeRole.role_id == role_id)
+            .options(
+                joinedload(EmployeeRole.employee).joinedload(Employee.position),
+                joinedload(EmployeeRole.employee).joinedload(Employee.department)
+            )
+        )
         result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        return list(result.unique().scalars().all())

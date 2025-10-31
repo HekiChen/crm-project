@@ -45,3 +45,17 @@ class RoleMenuPermResponse(ResponseSchema):
     can_read: bool
     can_write: bool
     can_delete: bool
+
+
+class RoleMenuPermWithMenuResponse(ResponseSchema):
+    """Schema for role-menu permission response with menu details."""
+    role_id: UUID
+    menu_id: UUID
+    menu_name: str
+    menu_path: str
+    menu_type: str
+    menu_icon: str | None
+    parent_id: UUID | None
+    can_read: bool
+    can_write: bool
+    can_delete: bool
