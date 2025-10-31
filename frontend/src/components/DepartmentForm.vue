@@ -11,7 +11,11 @@
     </el-form-item>
 
     <el-form-item label="Code" prop="code">
-      <el-input v-model="formData.code" placeholder="Enter department code" />
+      <el-input 
+        v-model="formData.code" 
+        :disabled="isEditing"
+        placeholder="Enter department code" 
+      />
     </el-form-item>
 
     <el-form-item label="Description" prop="description">
@@ -40,12 +44,22 @@
       </el-select>
     </el-form-item>
 
-    <el-form-item label="Manager ID" prop="manager_id">
-      <el-input
+    <el-form-item label="Manager" prop="manager_id">
+      <el-select
         v-model="formData.manager_id"
-        placeholder="Enter manager employee ID (optional)"
+        placeholder="Select manager (optional)"
         clearable
-      />
+        filterable
+        style="width: 100%"
+        :loading="loadingEmployees"
+      >
+        <el-option
+          v-for="emp in availableEmployees"
+          :key="emp.id"
+          :label="`${emp.first_name} ${emp.last_name} (${emp.employee_number})`"
+          :value="emp.id"
+        />
+      </el-select>
     </el-form-item>
 
     <el-form-item label="Status" prop="is_active">
@@ -62,7 +76,9 @@
 import { ref, reactive, watch, onMounted, computed } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Department, DepartmentCreate, DepartmentUpdate } from '@/types/department'
+import type { Employee } from '@/types/employee'
 import { getDepartments } from '@/api/departments'
+import { getEmployees } from '@/api/employees'
 
 interface Props {
   modelValue?: Department | null
@@ -95,6 +111,13 @@ const formData = reactive<DepartmentCreate & { is_active: boolean }>({
 
 // Available parent departments
 const availableParents = ref<Department[]>([])
+
+// Available employees for manager selection
+const availableEmployees = ref<Employee[]>([])
+const loadingEmployees = ref(false)
+
+// Computed: Check if form is in edit mode
+const isEditing = computed(() => !!props.modelValue)
 
 // Computed parent options (exclude current department and its descendants if editing)
 const parentOptions = computed(() => {
@@ -131,6 +154,17 @@ const rules: FormRules = {
   ],
 }
 
+// Methods
+const resetForm = () => {
+  formData.name = ''
+  formData.code = ''
+  formData.description = ''
+  formData.parent_id = undefined
+  formData.manager_id = undefined
+  formData.is_active = true
+  formRef.value?.clearValidate()
+}
+
 // Watch modelValue to populate form when editing
 watch(
   () => props.modelValue,
@@ -149,7 +183,6 @@ watch(
   { immediate: true }
 )
 
-// Methods
 const handleSubmit = async () => {
   if (!formRef.value) return
 
@@ -174,16 +207,6 @@ const handleSubmit = async () => {
   })
 }
 
-const resetForm = () => {
-  formData.name = ''
-  formData.code = ''
-  formData.description = ''
-  formData.parent_id = undefined
-  formData.manager_id = undefined
-  formData.is_active = true
-  formRef.value?.clearValidate()
-}
-
 const validate = () => {
   return formRef.value?.validate()
 }
@@ -197,14 +220,24 @@ defineExpose({
 
 // Lifecycle
 onMounted(async () => {
-  // Load available departments for parent selection
+  // Load available departments for parent selection and employees for manager selection
+  // Note: Using page_size=100 (API max). For large datasets, consider implementing
+  // remote search functionality where options load as user types.
   try {
-    const deptResponse = await getDepartments({ page_size: 1000 })
+    const [deptResponse, empResponse] = await Promise.all([
+      getDepartments({ page_size: 100 }),
+      getEmployees({ page_size: 100 }),
+    ])
+
     if (deptResponse.status === 200 && deptResponse.data) {
       availableParents.value = deptResponse.data.data
     }
+
+    if (empResponse.status === 200 && empResponse.data) {
+      availableEmployees.value = empResponse.data.data
+    }
   } catch (error) {
-    console.error('Error loading departments:', error)
+    console.error('Error loading departments or employees:', error)
   }
 })
 </script>

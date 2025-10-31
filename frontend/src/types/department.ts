@@ -12,6 +12,15 @@ export interface ManagerSummary {
 }
 
 /**
+ * Department summary for relationships
+ */
+export interface DepartmentSummary {
+  id: string
+  name: string
+  code: string
+}
+
+/**
  * Department entity
  */
 export interface Department {
@@ -20,10 +29,11 @@ export interface Department {
   code: string
   description?: string | null
   parent_id?: string | null
+  parent?: DepartmentSummary | null
   manager_id?: string | null
   manager?: ManagerSummary | null
   is_active: boolean
-  children?: string[] | null
+  children?: DepartmentSummary[] | null
   created_at?: string
   updated_at?: string
   is_deleted?: boolean

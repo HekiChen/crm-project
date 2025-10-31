@@ -13,6 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(getToken())
   const refreshToken = ref<string | null>(getRefreshToken())
+  const isInitializing = ref(false)
 
   // Getters
   const isAuthenticated = computed(() => !!token.value && !!user.value)
@@ -122,11 +123,14 @@ export const useAuthStore = defineStore('auth', () => {
     const storedToken = getToken()
     if (storedToken) {
       token.value = storedToken
+      isInitializing.value = true
       try {
         await fetchUserInfo()
       } catch {
         // If fetching user info fails, clear tokens
         await logout()
+      } finally {
+        isInitializing.value = false
       }
     }
   }
@@ -136,6 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     token,
     refreshToken,
+    isInitializing,
     // Getters
     isAuthenticated,
     userInfo,

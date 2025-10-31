@@ -69,31 +69,94 @@
             </el-descriptions-item>
             <el-descriptions-item label="Parent Department">
               <span 
-                v-if="department.parent_id" 
+                v-if="department.parent" 
                 class="clickable-link" 
-                @click="navigateToDepartment(department.parent_id)"
+                @click="navigateToDepartment(department.parent.id)"
               >
-                {{ department.parent_id }}
+                {{ department.parent.name }} ({{ department.parent.code }})
               </span>
               <span v-else>-</span>
             </el-descriptions-item>
             <el-descriptions-item label="Child Departments">
               <div v-if="department.children && department.children.length > 0">
                 <el-tag
-                  v-for="childId in department.children"
-                  :key="childId"
+                  v-for="child in department.children"
+                  :key="child.id"
                   class="child-tag clickable-link"
-                  @click="navigateToDepartment(childId)"
+                  @click="navigateToDepartment(child.id)"
                 >
-                  {{ childId }}
+                  {{ child.name }} ({{ child.code }})
                 </el-tag>
               </div>
               <span v-else>No child departments</span>
             </el-descriptions-item>
           </el-descriptions>
         </el-card>
+
+        <!-- Employees -->
+        <el-card shadow="never" class="info-card">
+          <template #header>
+            <span class="card-title">Employees</span>
+          </template>
+          <el-table 
+            v-loading="loadingEmployees" 
+            :data="employees" 
+            stripe 
+            style="width: 100%"
+          >
+            <el-table-column prop="employee_number" label="Employee #" width="120" />
+            <el-table-column label="Name" min-width="150">
+              <template #default="{ row }">
+                <span 
+                  class="clickable-link" 
+                  @click="navigateToEmployee(row.id)"
+                >
+                  {{ row.first_name }} {{ row.last_name }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="email" label="Email" min-width="200" />
+            <el-table-column label="Position" min-width="150">
+              <template #default="{ row }">
+                {{ row.position?.name || '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Hire Date" width="120">
+              <template #default="{ row }">
+                {{ row.hire_date ? new Date(row.hire_date).toLocaleDateString() : '-' }}
+              </template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="No employees in this department" />
+            </template>
+          </el-table>
+        </el-card>
       </template>
     </div>
+
+    <!-- Edit Dialog -->
+    <el-dialog
+      v-model="editDialogVisible"
+      title="Edit Department"
+      width="600px"
+      @close="formRef?.resetForm()"
+    >
+      <DepartmentForm
+        ref="formRef"
+        :model-value="department"
+        @submit="handleEditSubmit"
+      />
+      <template #footer>
+        <el-button @click="editDialogVisible = false">Cancel</el-button>
+        <el-button
+          type="primary"
+          :loading="submittingEdit"
+          @click="formRef?.handleSubmit()"
+        >
+          Save Changes
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -102,9 +165,11 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, Delete } from '@element-plus/icons-vue'
-import { getDepartment, deleteDepartment } from '@/api/departments'
+import { getDepartment, deleteDepartment, updateDepartment, getDepartmentEmployees } from '@/api/departments'
+import type { DepartmentEmployee } from '@/api/departments'
 import { useAuth } from '@/composables/useAuth'
-import type { Department } from '@/types/department'
+import type { Department, DepartmentUpdate } from '@/types/department'
+import DepartmentForm from '@/components/DepartmentForm.vue'
 
 defineOptions({
   name: 'DepartmentDetailPage',
@@ -117,6 +182,15 @@ const { isManagerOrAdmin } = useAuth()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const department = ref<Department | null>(null)
+
+// Edit dialog state
+const editDialogVisible = ref(false)
+const formRef = ref<InstanceType<typeof DepartmentForm> | null>(null)
+const submittingEdit = ref(false)
+
+// Employees state
+const employees = ref<DepartmentEmployee[]>([])
+const loadingEmployees = ref(false)
 
 const fetchDepartment = async () => {
   const id = route.params.id as string
@@ -131,6 +205,8 @@ const fetchDepartment = async () => {
   try {
     const response = await getDepartment(id)
     department.value = response.data
+    // Fetch employees after department is loaded
+    await fetchEmployees()
   } catch (err) {
     console.error('Failed to fetch department:', err)
     const errorResponse = err as { response?: { status?: number } }
@@ -144,15 +220,46 @@ const fetchDepartment = async () => {
   }
 }
 
+const fetchEmployees = async () => {
+  const id = route.params.id as string
+  if (!id) return
+
+  loadingEmployees.value = true
+  try {
+    const response = await getDepartmentEmployees(id)
+    employees.value = response.data || []
+  } catch (err) {
+    console.error('Failed to fetch employees:', err)
+    // Don't show error message, just keep empty list
+    employees.value = []
+  } finally {
+    loadingEmployees.value = false
+  }
+}
+
 const handleBack = () => {
   router.push({ name: 'Departments' })
 }
 
 const handleEdit = () => {
-  // TODO: Implement edit functionality
-  // For now, navigate back to list where edit dialog exists
-  router.push({ name: 'Departments' })
-  ElMessage.info('Please use the edit button in the departments list')
+  editDialogVisible.value = true
+}
+
+const handleEditSubmit = async (payload: DepartmentUpdate) => {
+  if (!department.value) return
+
+  submittingEdit.value = true
+  try {
+    const response = await updateDepartment(department.value.id, payload)
+    department.value = response.data
+    editDialogVisible.value = false
+    ElMessage.success('Department updated successfully')
+  } catch (err) {
+    console.error('Failed to update department:', err)
+    ElMessage.error('Failed to update department')
+  } finally {
+    submittingEdit.value = false
+  }
 }
 
 const handleDelete = async () => {
