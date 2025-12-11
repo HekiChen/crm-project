@@ -134,20 +134,24 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate, Empl
     
     async def get_by_id_with_position(self, id: UUID) -> Optional[Employee]:
         """
-        Get employee by ID with position data eagerly loaded.
+        Get employee by ID with position, department, and manager data eagerly loaded.
         
-        Uses joinedload to prevent N+1 query problem when accessing position.
+        Uses joinedload to prevent N+1 query problem when accessing related entities.
         
         Args:
             id: Employee ID
             
         Returns:
-            Employee instance with position loaded, or None if not found
+            Employee instance with position, department, and manager loaded, or None if not found
         """
         stmt = select(Employee).where(
             Employee.id == id,
             Employee.is_deleted == False  # noqa: E712
-        ).options(joinedload(Employee.position))
+        ).options(
+            joinedload(Employee.position),
+            joinedload(Employee.department),
+            joinedload(Employee.manager)
+        )
         
         result = await self.db.execute(stmt)
         return result.unique().scalar_one_or_none()
@@ -157,6 +161,9 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate, Empl
         *,
         pagination: PaginationParams,
         position_id: Optional[UUID] = None,
+        department_id: Optional[UUID] = None,
+        is_active: Optional[bool] = None,
+        search: Optional[str] = None,
     ) -> EmployeeListResponse:
         """
         Get paginated list of employees with position data eagerly loaded.
@@ -166,12 +173,19 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate, Empl
         Args:
             pagination: Pagination parameters
             position_id: Optional filter by position ID
+            department_id: Optional filter by department ID
+            is_active: Optional filter by active status (non-deleted employees)
+            search: Optional text search across employee_number, first_name, last_name, email
             
         Returns:
             Paginated list of employees with position data
         """
-        # Build base query with joinedload for position
-        query = select(Employee).options(joinedload(Employee.position))
+        # Build base query with joinedload for position, department, and manager
+        query = select(Employee).options(
+            joinedload(Employee.position),
+            joinedload(Employee.department),
+            joinedload(Employee.manager)
+        )
         
         # Apply soft-delete filter
         query = query.where(Employee.is_deleted == False)  # noqa: E712
@@ -180,14 +194,40 @@ class EmployeeService(BaseService[Employee, EmployeeCreate, EmployeeUpdate, Empl
         if position_id is not None:
             query = query.where(Employee.position_id == position_id)
         
-        # Get total count
+        # Apply department_id filter if provided
+        if department_id is not None:
+            query = query.where(Employee.department_id == department_id)
+        
+        # Apply search filter if provided
+        if search is not None and search.strip():
+            search_term = f"%{search.strip()}%"
+            query = query.where(
+                (Employee.employee_number.ilike(search_term)) |
+                (Employee.first_name.ilike(search_term)) |
+                (Employee.last_name.ilike(search_term)) |
+                (Employee.email.ilike(search_term))
+            )
+        
+        # Get total count with same filters
+        filters = [Employee.is_deleted == False]  # noqa: E712
+        
+        if position_id is not None:
+            filters.append(Employee.position_id == position_id)
+        
+        if department_id is not None:
+            filters.append(Employee.department_id == department_id)
+        
+        if search is not None and search.strip():
+            search_term = f"%{search.strip()}%"
+            filters.append(
+                (Employee.employee_number.ilike(search_term)) |
+                (Employee.first_name.ilike(search_term)) |
+                (Employee.last_name.ilike(search_term)) |
+                (Employee.email.ilike(search_term))
+            )
+        
         count_query = select(func.count()).select_from(
-            select(Employee.id).where(
-                and_(
-                    Employee.is_deleted == False,  # noqa: E712
-                    Employee.position_id == position_id if position_id is not None else True
-                )
-            ).subquery()
+            select(Employee.id).where(and_(*filters)).subquery()
         )
         result = await self.db.execute(count_query)
         total = result.scalar() or 0

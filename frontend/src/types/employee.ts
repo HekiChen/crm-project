@@ -17,6 +17,25 @@ export interface Position {
 }
 
 /**
+ * Department summary for employee display
+ */
+export interface DepartmentSummary {
+  id: string
+  name: string
+  code: string
+}
+
+/**
+ * Manager/Employee summary for display
+ */
+export interface ManagerSummary {
+  id: string
+  first_name: string
+  last_name: string
+  employee_number: string
+}
+
+/**
  * Employee entity
  */
 export interface Employee {
@@ -29,7 +48,9 @@ export interface Employee {
   position_id?: string | null
   position?: Position | null
   department_id?: string | null
+  department?: DepartmentSummary | null
   manager_id?: string | null
+  manager?: ManagerSummary | null
   phone?: string | null
   address1?: string | null
   address2?: string | null

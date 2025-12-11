@@ -10,8 +10,23 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from app.schemas.base import CreateSchema, UpdateSchema, ResponseSchema, ListResponseSchema
+from app.schemas.base import CreateSchema, UpdateSchema, ResponseSchema, ListResponseSchema, BaseSchema
 from app.schemas.position_schemas import PositionResponse
+
+
+class DepartmentSummary(BaseSchema):
+    """Minimal department information for employee display"""
+    id: UUID = Field(..., description="Department ID")
+    name: str = Field(..., description="Department name")
+    code: str = Field(..., description="Department code")
+
+
+class ManagerSummary(BaseSchema):
+    """Minimal manager/employee information for display"""
+    id: UUID = Field(..., description="Employee ID")
+    first_name: str = Field(..., description="First name")
+    last_name: str = Field(..., description="Last name")
+    employee_number: str = Field(..., description="Employee number")
 
 
 class EmployeeCreate(CreateSchema):
@@ -69,7 +84,11 @@ class EmployeeResponse(ResponseSchema):
     employee_number: str = Field(description="Unique employee identifier")
     hire_date: date = Field(description="Date of hire")
     position_id: Optional[UUID] = Field(default=None, description="UUID of the position/job role for this employee")
+    department_id: Optional[UUID] = Field(default=None, description="UUID of the department")
+    manager_id: Optional[UUID] = Field(default=None, description="UUID of the manager")
     position: Optional[PositionResponse] = Field(default=None, description="The position/job role details for this employee")
+    department: Optional[DepartmentSummary] = Field(default=None, description="The department details for this employee")
+    manager: Optional[ManagerSummary] = Field(default=None, description="The manager details for this employee")
 
 
 class EmployeeListResponse(ListResponseSchema[EmployeeResponse]):
