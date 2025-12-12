@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Backend FastAPI application
+  backend:
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${BACKEND_TAG:-latest}
+    container_name: crm-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - DEBUG=${DEBUG:-false}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+    volumes:
+      - backend-data:/app/data
+      - backend-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - crm-network
+
+  # Frontend Nginx application
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY}/frontend:${FRONTEND_TAG:-latest}
+    container_name: crm-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api/v1}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - crm-network
+
+  # Database (optional - use if not using external DB)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: crm-postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     - POSTGRES_DB=${POSTGRES_DB:-crm_db}
+  #     - POSTGRES_USER=${POSTGRES_USER:-crm_user}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "${POSTGRES_PORT:-5432}:5432"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crm_user}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - crm-network
+
+volumes:
+  backend-data:
+    driver: local
+  backend-logs:
+    driver: local
+  # postgres-data:
+  #   driver: local
+
+networks:
+  crm-network:
+    driver: bridge

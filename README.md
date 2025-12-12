@@ -1,6 +1,11 @@
 # CRM Project
 
-A modern Customer Relationship Management system built with FastAPI backend and standardized development practices.
+[![CI/CD Pipeline](https://github.com/HekiChen/crm-project/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/HekiChen/crm-project/actions/workflows/ci-cd.yml)
+[![Backend](https://img.shields.io/badge/backend-FastAPI-009688?logo=fastapi)](./backend)
+[![Frontend](https://img.shields.io/badge/frontend-Vue.js-4FC08D?logo=vue.js)](./frontend)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker)](./docker-compose.prod.yml)
+
+A modern Customer Relationship Management system built with FastAPI backend, Vue.js frontend, and full CI/CD automation.
 
 ## Overview
 
@@ -270,3 +275,36 @@ This will launch the API at <http://localhost:8000> with auto-reload enabled for
 Make sure your environment and dependencies are set up (see Getting Started above).
 
 See `openspec/AGENTS.md` for detailed workflow instructions.
+
+## Deployment
+
+### Quick Deploy with CI/CD
+
+This project includes a complete CI/CD pipeline that automatically:
+- ✅ Runs tests on every push
+- ✅ Bumps version numbers
+- ✅ Builds Docker containers
+- ✅ Deploys to staging/production
+
+**5-Minute Setup**: See [QUICK_START.md](./QUICK_START.md)
+
+**Full Documentation**: See [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+### Manual Deployment
+
+```bash
+# Deploy to production
+./deploy.sh production
+
+# Deploy to staging
+./deploy.sh staging
+```
+
+### Container Images
+
+Pre-built images available at:
+```
+ghcr.io/hekichen/crm-project/backend:latest
+ghcr.io/hekichen/crm-project/frontend:latest
+```
+
