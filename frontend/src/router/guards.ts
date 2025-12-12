@@ -47,13 +47,17 @@ export async function authGuard(
   }
 
   if (!authStore.isAuthenticated) {
-    // Not authenticated - redirect to login
-    next({
-      name: 'Login',
-      query: {
-        redirect: to.fullPath, // Save the attempted URL for redirecting after login
-      },
-    })
+    // Not authenticated - redirect to login (unless already going to login)
+    if (to.name !== 'Login') {
+      next({
+        name: 'Login',
+        query: {
+          redirect: to.fullPath, // Save the attempted URL for redirecting after login
+        },
+      })
+    } else {
+      next()
+    }
     return
   }
 

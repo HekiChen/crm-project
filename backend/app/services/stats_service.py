@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.employee import Employee
 from app.models.department import Department
 from app.models.role import Role
-from app.models.work_log import WorkLog
+# from app.models.work_log import WorkLog  # Commented out - pending implementation
 
 
 class StatsService:
@@ -69,10 +69,12 @@ class StatsService:
         ) or 0
         
         # Count work logs from last 7 days
-        seven_days_ago = date.today() - timedelta(days=7)
-        recent_activities_count = await self.db.scalar(
-            select(func.count(WorkLog.id)).where(WorkLog.date >= seven_days_ago)
-        ) or 0
+        # Temporarily disabled - WorkLog implementation pending
+        # seven_days_ago = date.today() - timedelta(days=7)
+        # recent_activities_count = await self.db.scalar(
+        #     select(func.count(WorkLog.id)).where(WorkLog.date >= seven_days_ago)
+        # ) or 0
+        recent_activities_count = 0
         
         return {
             "total_employees": employee_count,

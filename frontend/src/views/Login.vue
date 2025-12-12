@@ -125,9 +125,10 @@ const handleSubmit = async () => {
     router.push(redirect)
   } catch (error: unknown) {
     // Show error message
-    const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string }
+    const err = error as { response?: { data?: { error?: { message?: string }; message?: string } }; message?: string }
     errorMessage.value =
       err.response?.data?.error?.message ||
+      err.response?.data?.message ||
       err.message ||
       'Login failed. Please check your credentials and try again.'
 

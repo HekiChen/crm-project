@@ -4,6 +4,7 @@ Authentication API endpoints.
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,9 +16,9 @@ from app.dependencies.auth import get_current_employee
 from app.models.employee import Employee
 from app.models.employee_role import EmployeeRole
 from app.schemas.auth import (
-    LoginRequest,
     TokenResponse,
     RefreshRequest,
+    LoginRequest,
     UserInfo,
     RoleInfo,
 )
@@ -28,15 +29,66 @@ from app.utils.jwt import create_access_token, create_refresh_token, decode_toke
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
+@router.post("/token", response_model=TokenResponse, include_in_schema=False)
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    OAuth2 compatible token endpoint for Swagger UI authorization.
+    
+    This endpoint is used by Swagger UI's Authorize button.
+    Use your email as the username field.
+    """
+    # Find employee by email (case-insensitive)
+    stmt = select(Employee).where(Employee.email == form_data.username.lower())
+    result = await db.execute(stmt)
+    employee = result.scalar_one_or_none()
+    
+    # Check if employee exists and has a password hash
+    if not employee or not employee.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Verify password
+    if not verify_password(form_data.password, employee.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Check if account is active
+    if not employee.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is inactive"
+        )
+    
+    # Generate tokens with employee ID as subject
+    access_token = create_access_token(subject=str(employee.id))
+    refresh_token = create_refresh_token(subject=str(employee.id))
+    
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=settings.access_token_expire_minutes * 60,
+        refresh_token=refresh_token
+    )
+
+
 @router.post("/login", response_model=TokenResponse)
 async def login(
     request: LoginRequest,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """
-    Authenticate user and return JWT tokens.
+    Login with email and password (JSON).
     
-    - Verify email (username) and password
+    - Verify email and password
     - Generate access and refresh tokens
     - Return tokens with expiration info
     

@@ -112,6 +112,11 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.data
     } catch (error) {
       console.error('Failed to fetch user info:', error)
+      // If fetching user info fails (e.g., token invalid), clear tokens
+      user.value = null
+      token.value = null
+      refreshToken.value = null
+      clearTokens()
       throw error
     }
   }

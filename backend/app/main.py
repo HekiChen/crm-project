@@ -23,6 +23,7 @@ from app.api.departments import router as departments_router
 from app.api.roles import router as roles_router
 from app.api.menus import router as menus_router
 from app.api.stats import router as stats_router
+from app.api.work_logs import router as work_logs_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -49,6 +50,10 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
+    swagger_ui_init_oauth={
+        "usePkceWithAuthorizationCodeGrant": False,
+        "useBasicAuthenticationWithAccessCodeGrant": False,
+    },
 )
 
 # Middleware registration (order matters - outer to inner)
@@ -84,6 +89,7 @@ app.include_router(departments_router, prefix="/api/v1/departments", tags=["depa
 app.include_router(roles_router, prefix="/api/v1/roles", tags=["roles"])
 app.include_router(menus_router, prefix="/api/v1/menus", tags=["menus"])
 app.include_router(stats_router, prefix="/api/v1/stats", tags=["stats"])
+app.include_router(work_logs_router, prefix="/api/v1/work-logs", tags=["work-logs"])
 
 # Root endpoint
 @app.get("/")
