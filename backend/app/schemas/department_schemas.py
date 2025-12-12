@@ -2,18 +2,26 @@
 Department schemas for API request/response models.
 """
 from typing import Optional, List
+from datetime import date
 from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from app.schemas.base import CreateSchema, UpdateSchema, ResponseSchema, ListResponseSchema
+from app.schemas.base import BaseSchema, CreateSchema, UpdateSchema, ResponseSchema, ListResponseSchema
 
 
-class ManagerSummary(ResponseSchema):
+class ManagerSummary(BaseSchema):
     """Minimal manager information for department display purposes only"""
     id: UUID = Field(..., description="Manager employee ID")
     first_name: str = Field(..., description="Manager first name")
     last_name: str = Field(..., description="Manager last name")
+
+
+class DepartmentSummary(BaseSchema):
+    """Minimal department information for relationship display"""
+    id: UUID = Field(..., description="Department ID")
+    name: str = Field(..., description="Department name")
+    code: str = Field(..., description="Department code")
 
 
 class DepartmentCreate(CreateSchema):
@@ -71,11 +79,29 @@ class DepartmentResponse(ResponseSchema):
     code: str = Field(..., description="Unique department code")
     description: Optional[str] = Field(None, description="Department description")
     parent_id: Optional[UUID] = Field(None, description="Parent department ID")
+    parent: Optional[DepartmentSummary] = Field(None, description="Parent department details")
     manager_id: Optional[UUID] = Field(None, description="Manager employee ID")
     manager: Optional[ManagerSummary] = Field(None, description="Manager details (null if manager is inactive, deleted, or not assigned)")
     is_active: bool = Field(..., description="Active status")
-    children: Optional[List[UUID]] = Field(default=None, description="List of child department IDs (shallow)")
+    children: Optional[List[DepartmentSummary]] = Field(default=None, description="List of child departments (shallow)")
 
 
 class DepartmentListResponse(ListResponseSchema[DepartmentResponse]):
     pass
+
+
+class PositionSummary(ResponseSchema):
+    """Position information for employee display"""
+    id: UUID = Field(..., description="Position ID")
+    name: str = Field(..., description="Position name")
+
+
+class DepartmentEmployeeResponse(ResponseSchema):
+    """Employee information for department employee list"""
+    id: UUID = Field(..., description="Employee ID")
+    employee_number: str = Field(..., description="Employee number")
+    first_name: str = Field(..., description="Employee first name")
+    last_name: str = Field(..., description="Employee last name")
+    email: str = Field(..., description="Employee email")
+    position: Optional[PositionSummary] = Field(None, description="Employee position")
+    hire_date: Optional[date] = Field(None, description="Employee hire date")

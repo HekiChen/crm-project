@@ -93,3 +93,28 @@ export function getDepartmentParent(id: string): Promise<ApiResponse<Department>
     method: 'get',
   })
 }
+
+export interface DepartmentEmployee {
+  id: string
+  employee_number: string
+  first_name: string
+  last_name: string
+  email: string
+  position?: {
+    id: string
+    name: string
+  }
+  hire_date?: string
+}
+
+/**
+ * Get employees in a department
+ * @param id - Department ID
+ * @returns List of employees in the department
+ */
+export function getDepartmentEmployees(id: string): Promise<ApiResponse<DepartmentEmployee[]>> {
+  return request({
+    url: `/departments/${id}/employees`,
+    method: 'get',
+  })
+}

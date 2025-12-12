@@ -370,6 +370,9 @@ Uses eager loading to include position details for all employees without N+1 que
 async def list_employees(
     pagination: PaginationParams = Depends(),
     position_id: UUID | None = None,
+    department_id: UUID | None = None,
+    is_active: bool | None = None,
+    search: str | None = None,
     service: EmployeeService = Depends(get_employee_service),
 ) -> Any:
     """

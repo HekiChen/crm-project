@@ -104,23 +104,15 @@ Represents employee entities in the system.    """
         doc="Role assignments for this employee"
     )
     
-    # Work logs
-    work_logs: Mapped[list["WorkLog"]] = relationship(
-        "WorkLog",
-        back_populates="employee",
-        foreign_keys="[WorkLog.employee_id]",
-        cascade="all, delete-orphan",
-        lazy="select",
-        doc="Work logs created by this employee"
-    )
-    
-    approved_work_logs: Mapped[list["WorkLog"]] = relationship(
-        "WorkLog",
-        back_populates="approver",
-        foreign_keys="[WorkLog.approver_id]",
-        lazy="select",
-        doc="Work logs approved by this employee"
-    )
+    # # Work logs
+    # work_logs: Mapped[list["WorkLog"]] = relationship(
+    #     "WorkLog",
+    #     back_populates="employee",
+    #     foreign_keys="WorkLog.employee_id",
+    #     cascade="all, delete-orphan",
+    #     lazy="select",
+    #     doc="Work logs created by this employee"
+    # )
     
     # Export jobs
     export_jobs: Mapped[list["ExportJob"]] = relationship(

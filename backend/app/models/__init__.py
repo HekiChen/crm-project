@@ -9,7 +9,7 @@ from app.models.employee import Employee
 from app.models.menu import Menu
 from app.models.employee_role import EmployeeRole
 from app.models.role_menu_perm import RoleMenuPerm
-from app.models.work_log import WorkLog
+# from app.models.work_log import WorkLog  # Commented out - pending implementation
 from app.models.export_job import ExportJob
 
 # Import all models here to ensure they are registered with SQLAlchemy
@@ -23,6 +23,6 @@ __all__ = [
     "Menu",
     "EmployeeRole",
     "RoleMenuPerm",
-    "WorkLog",
+    # "WorkLog",  # Commented out - pending implementation
     "ExportJob",
 ]

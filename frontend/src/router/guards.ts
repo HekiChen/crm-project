@@ -29,8 +29,15 @@ export async function authGuard(
   }
 
   // Route requires auth - check if user is authenticated
-  // If token exists but user not loaded yet, try to fetch user info
-  if (authStore.token && !authStore.user) {
+  // The user should already be loaded by initAuth() in main.ts
+  // Wait for initialization to complete if it's in progress
+  if (authStore.isInitializing) {
+    // Wait a bit for initialization to complete
+    await new Promise(resolve => setTimeout(resolve, 50))
+  }
+  
+  // Only fetch if token exists but user is still null (edge case / race condition)
+  if (authStore.token && !authStore.user && !authStore.isInitializing) {
     try {
       await authStore.fetchUserInfo()
     } catch (error) {
@@ -40,13 +47,17 @@ export async function authGuard(
   }
 
   if (!authStore.isAuthenticated) {
-    // Not authenticated - redirect to login
-    next({
-      name: 'Login',
-      query: {
-        redirect: to.fullPath, // Save the attempted URL for redirecting after login
-      },
-    })
+    // Not authenticated - redirect to login (unless already going to login)
+    if (to.name !== 'Login') {
+      next({
+        name: 'Login',
+        query: {
+          redirect: to.fullPath, // Save the attempted URL for redirecting after login
+        },
+      })
+    } else {
+      next()
+    }
     return
   }
 

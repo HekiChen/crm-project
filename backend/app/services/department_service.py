@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload, selectinload
 
@@ -179,10 +179,14 @@ class DepartmentService(BaseService[Department, DepartmentCreate, DepartmentUpda
         *,
         pagination: PaginationParams,
         filters: Optional[Dict[str, Any]] = None,
+        search: Optional[str] = None,
         include_deleted: bool = False,
     ) -> DepartmentListResponse:
         """
-        Get paginated list of departments with children relationship disabled to avoid lazy loading.
+        Get paginated list of departments with optional filtering and search.
+        
+        Supports filtering by any department field via filters dict.
+        Supports searching by department name, code, or description.
         """
         # Build base query with noload for relationships (except manager_employee which uses selectinload)
         query = select(Department).options(
@@ -196,6 +200,17 @@ class DepartmentService(BaseService[Department, DepartmentCreate, DepartmentUpda
         # Apply soft-delete filter
         if not include_deleted:
             query = query.where(Department.is_deleted == False)  # noqa: E712
+        
+        # Apply search
+        if search:
+            search_term = f"%{search}%"
+            query = query.where(
+                or_(
+                    Department.name.ilike(search_term),
+                    Department.code.ilike(search_term),
+                    Department.description.ilike(search_term)
+                )
+            )
         
         # Apply filters
         if filters:
@@ -247,3 +262,36 @@ class DepartmentService(BaseService[Department, DepartmentCreate, DepartmentUpda
             page=pagination.page,
             page_size=pagination.page_size,
         )
+
+    async def get_employees(self, department_id: UUID) -> List[Employee]:
+        """
+        Get all employees in a department with position eager loading.
+        
+        Args:
+            department_id: Department UUID
+            
+        Returns:
+            List of Employee objects with position relationship loaded
+        """
+        from sqlalchemy.orm import joinedload
+        
+        # Verify department exists
+        dept = await self.get_by_id(department_id)
+        if not dept:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Department not found"
+            )
+        
+        # Fetch employees with position eager loading
+        stmt = (
+            select(Employee)
+            .where(
+                Employee.department_id == department_id,
+                Employee.is_deleted == False  # noqa: E712
+            )
+            .options(joinedload(Employee.position))
+            .order_by(Employee.employee_number)
+        )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())

@@ -13,6 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(getToken())
   const refreshToken = ref<string | null>(getRefreshToken())
+  const isInitializing = ref(false)
 
   // Getters
   const isAuthenticated = computed(() => !!token.value && !!user.value)
@@ -111,6 +112,11 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.data
     } catch (error) {
       console.error('Failed to fetch user info:', error)
+      // If fetching user info fails (e.g., token invalid), clear tokens
+      user.value = null
+      token.value = null
+      refreshToken.value = null
+      clearTokens()
       throw error
     }
   }
@@ -122,11 +128,14 @@ export const useAuthStore = defineStore('auth', () => {
     const storedToken = getToken()
     if (storedToken) {
       token.value = storedToken
+      isInitializing.value = true
       try {
         await fetchUserInfo()
       } catch {
         // If fetching user info fails, clear tokens
         await logout()
+      } finally {
+        isInitializing.value = false
       }
     }
   }
@@ -136,6 +145,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     token,
     refreshToken,
+    isInitializing,
     // Getters
     isAuthenticated,
     userInfo,
