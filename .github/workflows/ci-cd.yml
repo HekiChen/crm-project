@@ -257,7 +257,6 @@ jobs:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-      url: ${{ github.ref == 'refs/heads/main' && secrets.PROD_URL || secrets.STAGING_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -298,10 +297,20 @@ jobs:
           echo "Waiting for services to be healthy..."
           sleep 30
           
-          # Check backend health
-          curl -f ${{ github.ref == 'refs/heads/main' && secrets.PROD_URL || secrets.STAGING_URL }}/api/v1/health || exit 1
+          # Set deployment URL based on environment
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            DEPLOY_URL="${{ secrets.PROD_URL }}"
+          else
+            DEPLOY_URL="${{ secrets.STAGING_URL }}"
+          fi
           
-          echo "Deployment verified!"
+          # Check backend health if URL is configured
+          if [ -n "$DEPLOY_URL" ]; then
+            curl -f ${DEPLOY_URL}/api/v1/health || exit 1
+            echo "Deployment verified!"
+          else
+            echo "No deployment URL configured, skipping health check"
+          fi
 
   # Job 7: Notify
   notify:
