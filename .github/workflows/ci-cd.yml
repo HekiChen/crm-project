@@ -71,11 +71,16 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Backend version bumped to $NEW_VERSION"
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
       - name: Bump Frontend Version
         id: bump_frontend
         working-directory: frontend
         run: |
-          npm version ${{ github.event.inputs.version_bump || 'minor' }} --no-git-tag-version
+          pnpm version ${{ github.event.inputs.version_bump || 'minor' }} --no-git-tag-version
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Frontend version bumped to $NEW_VERSION"
@@ -138,24 +143,41 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run linter
         working-directory: frontend
-        run: npm run lint || true
+        run: pnpm run lint || true
 
       - name: Type check
         working-directory: frontend
-        run: npm run type-check
+        run: pnpm run type-check
 
       - name: Build
         working-directory: frontend
-        run: npm run build
+        run: pnpm run build
 
   # Job 4: Build and Push Backend Docker Image
   build-backend:
