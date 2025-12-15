@@ -10,11 +10,20 @@
 
 ### 1. Enable Package Publishing (2 min)
 
+**Important:** You must enable package creation for GitHub Container Registry.
+
 1. Go to: `Settings` → `Actions` → `General`
 2. Under "Workflow permissions":
    - Select **"Read and write permissions"**
    - Check **"Allow GitHub Actions to create and approve pull requests"**
 3. Click **Save**
+
+**For organization repositories:**
+1. Go to: Organization Settings → `Packages` → `Package creation`
+2. Under "Package creation":
+   - Allow members to publish packages
+3. Ensure GitHub Actions has permission to create packages:
+   - `Settings` → `Actions` → `General` → Workflow permissions → "Read and write"
 
 ### 2. Add Deployment Secrets (2 min)
 
