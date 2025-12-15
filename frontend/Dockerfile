@@ -7,13 +7,13 @@ RUN corepack enable && corepack prepare pnpm@8 --activate
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
 
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
 
 # Copy source code
-COPY . .
+COPY frontend/ .
 
 # Build argument for API base URL
 ARG VITE_API_BASE_URL=/api/v1
@@ -26,7 +26,7 @@ RUN pnpm run build
 FROM nginx:alpine
 
 # Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built files from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
