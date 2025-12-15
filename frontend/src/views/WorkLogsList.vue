@@ -553,7 +553,7 @@ function handleExport() {
         `"${(log.issues || '').replace(/"/g, '""')}"`,
         `"${(log.plans || '').replace(/"/g, '""')}"`,
         log.rating || '',
-        log.rated_by ? `"${log.rated_by.first_name || ''} ${log.rated_by.last_name || ''}"` : '',
+        log.rater ? `"${log.rater.first_name || ''} ${log.rater.last_name || ''}"` : '',
         new Date(log.created_at).toLocaleString(),
       ]
       csvRows.push(row.join(','))
